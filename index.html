@@ -8,22 +8,53 @@
         body { 
             font-family: sans-serif; 
             text-align: center; 
-            padding: 50px 20px; 
+            padding: 40px 20px; 
             background-color: #f7f9fc; 
+            margin: 0;
         }
         h1 { color: #333; margin-bottom: 30px; }
-        .menu-btn {
-            display: block; 
-            width: 80%; 
-            max-width: 300px; 
-            margin: 15px auto;
-            padding: 15px; 
-            background-color: #4CAF50; 
+        
+        /* 4 欄網格設計 */
+        .grid-container {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 20px;
+            max-width: 1000px;
+            margin: 0 auto;
+        }
+        
+        /* 正方形卡片外觀 */
+        .game-card {
+            background-color: #4CAF50; /* 方塊顏色 */
+            border-radius: 15px;
+            text-decoration: none;
             color: white;
-            text-decoration: none; 
-            border-radius: 8px; 
-            font-size: 20px;
-            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+            box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+            transition: transform 0.2s, background-color 0.2s;
+            
+            /* 強制設定為正方形，並讓文字垂直/水平置中 */
+            aspect-ratio: 1 / 1;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 15px;
+            font-size: 22px;
+            font-weight: bold;
+            line-height: 1.4;
+        }
+        
+        .game-card:hover {
+            transform: translateY(-5px);
+            background-color: #45a049;
+        }
+
+        /* 手機與平板尺寸自動調整 */
+        @media (max-width: 900px) {
+            .grid-container { grid-template-columns: repeat(2, 1fr); } /* 平板變一排 2 個 */
+        }
+        @media (max-width: 500px) {
+            .grid-container { grid-template-columns: repeat(2, 1fr); } /* 手機一樣維持一排 2 個正方形 */
+            .game-card { font-size: 18px; } /* 手機版字體稍微縮小 */
         }
     </style>
 </head>
@@ -31,10 +62,19 @@
 
     <h1>請選擇遊戲</h1>
 
-    <!-- 這裡的 href 對應你上傳的檔案名稱 -->
-    <a href="richman1.html" class="menu-btn">階級教育社會學大富翁 (一)</a>
-    <a href="richman2.html" class="menu-btn">階級教育社會學大富翁 (二)</a>
-    <a href="richman3.html" class="menu-btn">階級教育社會學大富翁 (三)</a>
+    <div class="grid-container">
+        <!-- 遊戲 1 -->
+        <a href="richman1.html" class="game-card">階級教育社會學大富翁 (一)</a>
+        
+        <!-- 遊戲 2 -->
+        <a href="richman2.html" class="game-card">階級教育社會學大富翁 (二)</a>
+        
+        <!-- 遊戲 3 -->
+        <a href="richman3.html" class="game-card">階級教育社會學大富翁 (三)</a>
+        
+        <!-- 遊戲 4 (未來新增遊戲請複製這段修改) -->
+        <a href="#" class="game-card" style="background-color: #9e9e9e;">第四個遊戲<br>(建置中)</a>
+    </div>
 
 </body>
 </html>
