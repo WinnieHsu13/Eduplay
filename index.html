@@ -59,4 +59,143 @@
         /* 4 欄網格設計 */
         .grid-container {
             display: grid;
-            grid-template-columns: repeat(4, 1fr
+            grid-template-columns: repeat(4, 1fr);
+            gap: 20px;
+        }
+        
+        /* 正方形卡片外觀 */
+        .game-card {
+            border-radius: 15px;
+            text-decoration: none;
+            color: #444;
+            box-shadow: 0 4px 8px rgba(0,0,0,0.06);
+            transition: transform 0.2s, box-shadow 0.2s, background-color 0.2s;
+            aspect-ratio: 1 / 1;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 15px;
+            font-size: 22px;
+            font-weight: bold;
+            line-height: 1.4;
+            text-align: center;
+        }
+        
+        .game-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 6px 12px rgba(0,0,0,0.1);
+        }
+
+        /* --- 馬卡龍色系設定 (一個類別一種顏色) --- */
+        
+        /* 1. 教育科：馬卡龍粉紅 */
+        .theme-pink summary, .theme-pink .game-card { background-color: #FFE5E5; }
+        .theme-pink summary:hover, .theme-pink .game-card:hover { background-color: #FFD1D1; }
+
+        /* 2. 統計科：馬卡龍粉藍 */
+        .theme-blue summary, .theme-blue .game-card { background-color: #E5F3FF; }
+        .theme-blue summary:hover, .theme-blue .game-card:hover { background-color: #CCE7FF; }
+
+        /* 3. 數學科：馬卡龍粉黃 */
+        .theme-yellow summary, .theme-yellow .game-card { background-color: #FFF4CC; }
+        .theme-yellow summary:hover, .theme-yellow .game-card:hover { background-color: #FFEAA3; }
+
+        /* 4. SDGs：馬卡龍粉綠 */
+        .theme-green summary, .theme-green .game-card { background-color: #E5F9E5; }
+        .theme-green summary:hover, .theme-green .game-card:hover { background-color: #CCF2CC; }
+
+        /* 5. 專題與其他：馬卡龍粉紫 */
+        .theme-purple summary, .theme-purple .game-card { background-color: #F0E5FF; }
+        .theme-purple summary:hover, .theme-purple .game-card:hover { background-color: #E2CCFF; }
+
+        /* 6. 更多遊戲：微灰色 */
+        .theme-gray summary, .theme-gray .game-card { background-color: #F5F5F5; color: #888; }
+        .theme-gray summary:hover, .theme-gray .game-card:hover { background-color: #EBEBEB; }
+
+
+        /* 手機與平板尺寸自動調整 */
+        @media (max-width: 900px) {
+            .grid-container { grid-template-columns: repeat(2, 1fr); }
+        }
+        @media (max-width: 500px) {
+            .game-card { font-size: 18px; }
+            summary { font-size: 18px; }
+        }
+    </style>
+</head>
+<body>
+
+    <h1>請選擇遊戲類別</h1>
+
+    <!-- 1. 教育科 (粉紅) -->
+    <details class="theme-pink" open>
+        <summary>教育科</summary>
+        <div class="category-content">
+            <div class="grid-container">
+                <a href="richman1.html" class="game-card">Richman-1</a>
+                <a href="richman2.html" class="game-card">Richman-2</a>
+                <a href="richman3.html" class="game-card">Richman-3</a>
+                <a href="rpg.html" class="game-card">RPG</a>     
+            </div>
+        </div>
+    </details>
+
+    <!-- 2. 統計科 (粉藍) -->
+    <details class="theme-blue">
+        <summary>統計科</summary>
+        <div class="category-content">
+            <div class="grid-container">
+                <a href="school1.html" class="game-card">Media-1</a>        
+                <a href="school2.html" class="game-card">Media-2</a>        
+                <a href="school3.html" class="game-card">Media-3</a> 
+            </div>
+        </div>
+    </details>
+
+    <!-- 3. 數學科 (粉黃) -->
+    <details class="theme-yellow">
+        <summary>數學科</summary>
+        <div class="category-content">
+            <div class="grid-container">
+                <a href="math1.html" class="game-card">Math-1</a>       
+                <a href="math2.html" class="game-card">Math-2</a>
+                <a href="math3.html" class="game-card">Math-3</a>
+            </div>
+        </div>
+    </details>
+
+    <!-- 4. 永續發展 (粉綠) -->
+    <details class="theme-green">
+        <summary>永續發展 (SDGs)</summary>
+        <div class="category-content">
+            <div class="grid-container">
+                <a href="SDGs-1.html" class="game-card">SDGs-1</a>
+                <a href="SDGs-2.html" class="game-card">SDGs-2</a>
+                <a href="SDGs-3.html" class="game-card">SDGs-3</a>
+            </div>
+        </div>
+    </details>
+
+    <!-- 5. 專題與其他 (粉紫) -->
+    <details class="theme-purple">
+        <summary>專題與其他</summary>
+        <div class="category-content">
+            <div class="grid-container">
+                <a href="IR-1.html" class="game-card">IR-1</a>
+                <a href="IR-2.html" class="game-card">IR-2</a>
+            </div>
+        </div>
+    </details>
+
+    <!-- 6. 更多遊戲 (獨立微灰區塊) -->
+    <details class="theme-gray">
+        <summary>更多遊戲</summary>
+        <div class="category-content">
+            <div class="grid-container">
+                <a href="#" class="game-card">更多遊戲<br>(建置中)</a>
+            </div>
+        </div>
+    </details>
+
+</body>
+</html>
