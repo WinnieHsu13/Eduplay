@@ -1,0 +1,193 @@
+<!DOCTYPE html>
+<html lang="zh-Hant"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>數學繪圖工作室</title>
+<style>
+:root{--bg:#eef1f6;--fg:#1d2330;--card:#fff;--bd:#d6dbe4;--ac:#2f6fed;--mu:#667085;box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px);color-scheme:light}
+@media(prefers-color-scheme:dark){:root:not([data-theme="light"]){--bg:#14171d;--fg:#e8ebf1;--card:#1e222b;--bd:#343a46;--ac:#6b9bff;--mu:#9aa3b2;color-scheme:dark}}
+:root[data-theme="dark"]{--bg:#14171d;--fg:#e8ebf1;--card:#1e222b;--bd:#343a46;--ac:#6b9bff;--mu:#9aa3b2;color-scheme:dark}
+*{box-sizing:border-box}html,body{margin:0}
+body{background:var(--bg);color:var(--fg);font:14px/1.5 "Noto Sans TC","PingFang TC","Microsoft JhengHei",system-ui,sans-serif;padding:14px}
+header{display:flex;align-items:center;gap:12px;flex-wrap:wrap;margin-bottom:14px}.logo{width:42px;height:42px;border-radius:12px;background:linear-gradient(135deg,#2f6fed,#8b5cf6);display:grid;place-items:center;font-size:22px;box-shadow:0 4px 12px rgba(47,111,237,.35)}h1{font-size:20px;margin:0;line-height:1.2}.sub{font-size:12px;color:var(--mu)}.tpl{margin-left:auto;display:flex;gap:6px;flex-wrap:wrap;align-items:center}.tpl .b{border-radius:99px;font-size:13px;padding:5px 12px}.card{box-shadow:0 1px 4px rgba(0,0,0,.07)}.b.th{display:inline-flex;align-items:center;gap:6px}.dot{width:14px;height:14px;border-radius:50%;border:1px solid rgba(128,128,128,.5);display:inline-block}code{background:var(--bg);padding:0 4px;border-radius:4px}
+.app{display:flex;gap:14px;flex-wrap:wrap;align-items:flex-start}
+.side{flex:1 1 300px;max-width:380px;display:flex;flex-direction:column;gap:10px}
+.main{flex:3 1 420px;min-width:0}
+.card{background:var(--card);border:1px solid var(--bd);border-radius:12px;padding:10px 12px}
+.card h3{margin:0 0 6px;font-size:13px;color:var(--mu);font-weight:600}
+button,select{font:inherit;color:var(--fg)}
+.b{border:1px solid var(--bd);background:var(--card);padding:6px 10px;border-radius:8px;cursor:pointer}
+.b:hover{border-color:var(--ac)}.b.on{background:var(--ac);color:#fff;border-color:var(--ac)}
+.flex{display:flex;gap:6px;flex-wrap:wrap;align-items:center}
+.item{display:flex;align-items:center;gap:6px;padding:5px 8px;border:1px solid var(--bd);border-radius:8px;margin-bottom:5px;cursor:pointer}
+.item.on{border-color:var(--ac);background:color-mix(in srgb,var(--ac) 12%,transparent)}
+.item span{flex:1}.item button{border:0;background:none;cursor:pointer;padding:2px 5px;font-size:13px}
+label{display:block;font-size:12px;color:var(--mu);margin:7px 0 2px}
+input[type=number],input[type=text],textarea,select{width:100%;padding:5px 7px;border:1px solid var(--bd);border-radius:6px;background:var(--bg);color:var(--fg)}
+textarea{min-height:84px;font-family:ui-monospace,Menlo,monospace}
+.g2{display:grid;grid-template-columns:1fr 1fr;gap:6px}
+.chk{display:flex;align-items:center;gap:6px;margin:5px 0;font-size:13px}
+.paper{border-radius:12px;overflow:hidden;box-shadow:0 4px 18px rgba(0,0,0,.18);line-height:0}
+.paper svg{width:100%;height:auto}
+table.g td{padding:2px}table.g input{width:44px;text-align:center;padding:4px}
+.hint{font-size:12px;color:var(--mu);line-height:1.4}
+</style></head><body>
+<header><div class="logo">📐</div><div><h1>數學繪圖工作室</h1><div class="sub">國中小數學圖形・排成學習單・四種風格</div></div><div class="tpl"><span class="sub">一鍵範例</span><span id="tpl" class="tpl" style="margin:0"></span></div></header>
+<div class="app">
+ <div class="side">
+  <div class="card"><h3>風格</h3><div class="flex" id="themes"></div></div>
+  <div class="card"><h3>學習單</h3>
+   <input type="text" id="stitle" value="三角形、數線與立體方塊" placeholder="學習單標題（可留空）">
+   <div class="flex" style="margin-top:8px"><button class="b" data-add="coord">＋座標平面</button><button class="b" data-add="num">＋數線</button><button class="b" data-add="geo">＋幾何作圖</button><button class="b" data-add="cube">＋立體方塊</button></div>
+   <div class="chk"><input type="checkbox" id="sname"><span>姓名座號欄</span></div><div class="chk"><input type="checkbox" id="sgrid"><span>方格紙背景</span></div><div id="list" style="margin-top:8px"></div>
+  </div>
+  <div class="card"><h3>編輯所選圖形</h3><div id="ed"></div></div>
+ </div>
+ <div class="main">
+  <div class="paper" id="paper"></div>
+  <div class="flex" style="margin-top:10px"><button class="b" data-x="svg">下載 SVG</button><button class="b" data-x="png">下載 PNG</button><button class="b" data-x="copy">複製圖片</button><span class="hint" id="xh">可貼進 Word／PPT 當教材。</span></div>
+ </div>
+</div>
+<script>
+const $=id=>document.getElementById(id);
+const esc=s=>String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;');
+const fmt=v=>String(Math.round(v*1e4)/1e4);
+const nm=s=>{s=String(s).trim();if(s.includes('/')){const[a,b]=s.split('/');return +a/+b}return +s};
+const TH={
+ book:{n:'課本黑白',bg:'#fff',ink:'#111',grid:'#ddd',top:'#e0e0e0',left:'#fff',right:'#9b9b9b',fill:'rgba(0,0,0,.07)',pt:['#111'],font:'"Times New Roman",serif',it:'italic',sw:2},
+ pastel:{n:'粉彩教室',bg:'#fffaf1',ink:'#3b3355',grid:'#eadfce',top:'#ffd9a0',left:'#c9e8ff',right:'#9dbff0',fill:'rgba(255,130,110,.2)',pt:['#ef6f6c','#4a90d9','#3fb68b','#f2a541'],font:'"Noto Sans TC","PingFang TC",system-ui,sans-serif',it:'normal',sw:2.6},
+ chalk:{n:'黑板粉筆',bg:'#24443a',ink:'#f4f1e6',grid:'#3d6254',top:'#f4f1e6',left:'#a9cdbb',right:'#5f8f7b',fill:'rgba(255,238,140,.18)',pt:['#ffe66d','#ff9fb2','#8fe3ff','#c1f0a0'],font:'"Segoe Print","Comic Sans MS","PingFang TC",cursive,sans-serif',it:'normal',sw:2.4},
+ blue:{n:'藍圖',bg:'#0f3d73',ink:'#e8f2ff',grid:'#2a5c96',top:'#9cc9f7',left:'#3b7cc4',right:'#1b4f8c',fill:'rgba(255,255,255,.14)',pt:['#ffffff','#ffd166'],font:'ui-monospace,"SF Mono",Menlo,"Noto Sans TC",monospace',it:'normal',sw:2}
+};
+let th='book',sel=0,uid=0;
+const mk=t=>({id:++uid,type:t,half:false,title:'',...({
+ coord:{xmin:-5,xmax:5,ymin:-5,ymax:5,pts:'A -2 3\nB 4 1\nC 1 -3',segs:'A B C',closed:true,fill:true,grid:false,showxy:false},
+ num:{min:-5,max:5,sub:1,pts:'A -3\nC -3.8\nB 2\nD 2.7\nE 4.75',iv:'',subl:false},
+ geo:{xmin:-5,xmax:5,ymin:-4,ymax:4,axes:false,grid:true,pts:'A 4 0\nO 0 0\nB 2.5 3.5\nC -3 0',cmds:'seg O A\nseg O B\nseg O C\nangle A O B\nangle B O C'},cube:{G:[[1,0,0],[2,1,0],[3,2,1]],v3:true}}[t])});
+let items=[mk('coord'),mk('num'),mk('cube')];items[0].half=true;items[0].title='座標平面上的三角形';items[1].title='數線上的點';items[2].title='立體方塊與三視圖';
+
+const tx=(x,y,s,sz,t,anc='middle',it=true,fill)=>`<text x="${x}" y="${y}" text-anchor="${anc}" font-family='${t.font}' font-size="${sz}" font-style="${it?t.it:'normal'}" fill="${fill||t.ink}">${esc(s)}</text>`;
+const ar=(x1,y1,x2,y2,c,w)=>{const a=Math.atan2(y2-y1,x2-x1),L=11,b=.4;return `<line x1="${x1}" y1="${y1}" x2="${x2-Math.cos(a)*6}" y2="${y2-Math.sin(a)*6}" stroke="${c}" stroke-width="${w}" stroke-linecap="round"/><polygon points="${x2},${y2} ${x2-L*Math.cos(a-b)},${y2-L*Math.sin(a-b)} ${x2-L*Math.cos(a+b)},${y2-L*Math.sin(a+b)}" fill="${c}"/>`};
+
+function fCoord(o,t){
+ const{xmin,xmax,ymin,ymax}=o;if(!(xmax>xmin&&ymax>ymin))return null;
+ const W=520,H=520,m=34,sx=v=>m+(v-xmin)/(xmax-xmin)*(W-2*m),sy=v=>H-m-(v-ymin)/(ymax-ymin)*(H-2*m);
+ const ax=Math.min(Math.max(0,xmin),xmax),ay=Math.min(Math.max(0,ymin),ymax);let s='';
+ if(o.grid){for(let x=Math.ceil(xmin);x<=xmax;x++)s+=`<line x1="${sx(x)}" y1="${sy(ymin)}" x2="${sx(x)}" y2="${sy(ymax)}" stroke="${t.grid}"/>`;
+  for(let y=Math.ceil(ymin);y<=ymax;y++)s+=`<line x1="${sx(xmin)}" y1="${sy(y)}" x2="${sx(xmax)}" y2="${sy(y)}" stroke="${t.grid}"/>`}
+ s+=ar(sx(xmin)-8,sy(ay),sx(xmax)+12,sy(ay),t.ink,1.6)+ar(sx(ax),sy(ymin)+8,sx(ax),sy(ymax)-12,t.ink,1.6);
+ s+=tx(sx(xmax)+6,sy(ay)+22,'x',18,t,'start')+tx(sx(ax)+12,sy(ymax)-6,'y',18,t,'start');
+ for(let x=Math.ceil(xmin);x<=xmax;x++){s+=`<line x1="${sx(x)}" y1="${sy(ay)-4}" x2="${sx(x)}" y2="${sy(ay)+4}" stroke="${t.ink}"/>`;if(x)s+=tx(sx(x),sy(ay)+20,x,14,t,'middle',false)}
+ for(let y=Math.ceil(ymin);y<=ymax;y++){s+=`<line x1="${sx(ax)-4}" y1="${sy(y)}" x2="${sx(ax)+4}" y2="${sy(y)}" stroke="${t.ink}"/>`;if(y)s+=tx(sx(ax)-9,sy(y)+5,y,14,t,'end',false)}
+ if(xmin<=0&&xmax>=0&&ymin<=0&&ymax>=0)s+=tx(sx(0)-12,sy(0)+19,'O',15,t);
+ const P={};o.pts.split('\n').forEach(l=>{const r=l.match(/^\s*(\S+?)\s*[\(\s,]\s*(-?\d*\.?\d+)\s*[,\s]\s*(-?\d*\.?\d+)/);if(r)P[r[1]]=[+r[2],+r[3]]});
+ const N=Object.keys(P);
+ o.segs.split('\n').forEach(l=>{const a=l.trim().split(/\s+/).filter(n=>P[n]);if(a.length<2)return;const p=a.map(n=>sx(P[n][0])+','+sy(P[n][1])).join(' ');
+  s+=(o.closed&&a.length>2)?`<polygon points="${p}" fill="${o.fill?t.fill:'none'}" stroke="${t.ink}" stroke-width="${t.sw}" stroke-linejoin="round"/>`:`<polyline points="${p}" fill="none" stroke="${t.ink}" stroke-width="${t.sw}" stroke-linecap="round"/>`});
+ const cx=N.reduce((a,n)=>a+P[n][0],0)/(N.length||1),cy=N.reduce((a,n)=>a+P[n][1],0)/(N.length||1);
+ N.forEach((n,i)=>{const[x,y]=P[n];let dx=sx(x)-sx(cx),dy=sy(y)-sy(cy),d=Math.hypot(dx,dy);if(N.length<2||d<1){dx=1;dy=-1;d=1.41}
+  const c=t.pt[i%t.pt.length];s+=`<circle cx="${sx(x)}" cy="${sy(y)}" r="5" fill="${c}" stroke="${t.ink}" stroke-width="1.2"/>`+tx(sx(x)+dx/d*18,sy(y)+dy/d*18+6,n+(o.showxy?`(${fmt(x)}, ${fmt(y)})`:''),19,t)});
+ return{w:W,h:H,s}}
+
+function fNum(o,t){
+ const mn=Math.floor(o.min),mx=Math.ceil(o.max),n=Math.max(1,o.sub|0);if(!(mx>mn))return null;
+ const W=700,H=130,m=40,y0=82,sx=v=>m+(v-mn)/(mx-mn)*(W-2*m);let s='';
+ const iv=o.iv.trim().split(/\s+/).map(nm);if(iv.length==2&&iv.every(v=>!isNaN(v)))s+=`<rect x="${sx(Math.max(mn,iv[0]))}" y="${y0-7}" width="${Math.max(0,sx(Math.min(mx,iv[1]))-sx(Math.max(mn,iv[0])))}" height="14" rx="7" fill="${t.pt[1%t.pt.length]}" opacity=".55"/>`;
+ s+=ar(m-22,y0,W-m+24,y0,t.ink,1.8);
+ for(let i=mn;i<=mx;i++){s+=`<line x1="${sx(i)}" y1="${y0-8}" x2="${sx(i)}" y2="${y0+8}" stroke="${t.ink}" stroke-width="1.8"/>`+tx(sx(i),y0+30,i<0?'−'+(-i):i,18,t,'middle',false);
+  if(i<mx)for(let k=1;k<n;k++){const v=i+k/n;s+=`<line x1="${sx(v)}" y1="${y0-5}" x2="${sx(v)}" y2="${y0+5}" stroke="${t.ink}"/>`;if(o.subl)s+=tx(sx(v),y0+22,fmt(v),10,t,'middle',false,t.grid)}}
+ let k=0;o.pts.split('\n').forEach(l=>{const r=l.trim().split(/\s+/);if(r.length<2)return;const v=nm(r[1]);if(isNaN(v)||v<mn||v>mx)return;
+  s+=`<circle cx="${sx(v)}" cy="${y0}" r="5" fill="${t.pt[k++%t.pt.length]}" stroke="${t.ink}" stroke-width="1.2"/>`+tx(sx(v),y0-15,r[0],20,t)});
+ return{w:W,h:H,s}}
+
+function fCube(o,t){
+ const G=o.G,R=G.length,C=G[0].length,u=40,A=.866*u,pj=(c,f,z)=>[(c-f)*A,(c+f)*A/2-z*u];
+ const cu=[];G.forEach((row,r)=>row.forEach((h,c)=>{for(let z=0;z<h;z++)cu.push([c,R-1-r,z])}));
+ if(!cu.length)return null;cu.sort((a,b)=>(a[0]+a[1])-(b[0]+b[1])||a[2]-b[2]);
+ const xs=[],ys=[];let b='';
+ const poly=(p,f)=>{p.forEach(q=>{xs.push(q[0]);ys.push(q[1])});return `<polygon points="${p.map(q=>q[0].toFixed(1)+','+q[1].toFixed(1)).join(' ')}" fill="${f}" stroke="${t.ink}" stroke-width="${t.sw*.7}" stroke-linejoin="round"/>`};
+ cu.forEach(([c,f,z])=>{b+=poly([pj(c,f+1,z),pj(c+1,f+1,z),pj(c+1,f+1,z+1),pj(c,f+1,z+1)],t.left)+poly([pj(c+1,f,z),pj(c+1,f+1,z),pj(c+1,f+1,z+1),pj(c+1,f,z+1)],t.right)+poly([pj(c,f,z+1),pj(c+1,f,z+1),pj(c+1,f+1,z+1),pj(c,f+1,z+1)],t.top)});
+ const x0=Math.min(...xs)-12,y0=Math.min(...ys)-12,iw=Math.max(...xs)-x0+12,ih=Math.max(...ys)-y0+12;
+ let s=`<g transform="translate(${-x0},${-y0})">${b}</g>`,W=iw+12,H=ih+12;
+ if(o.v3){const cH=Array.from({length:C},(_,c)=>Math.max(...G.map(r=>r[c]))),rH=G.map(r=>Math.max(...r)),mh=Math.max(...cH),q=30;let ox=W+34;const oy=Math.max(4,(H-mh*q)/2-14);
+  const cell=(x,y,on)=>`<rect x="${x}" y="${y}" width="${q}" height="${q}" fill="${on?t.top:'none'}" stroke="${on?t.ink:t.grid}" stroke-width="${on?t.sw*.7:1}" ${on?'':'stroke-dasharray="3 3"'}/>`;
+  const view=(w,fn,lab)=>{let r='';for(let i=0;i<w;i++)for(let j=0;j<mh;j++)r+=cell(ox+i*q,oy+(mh-1-j)*q,fn(i,j));r+=tx(ox+w*q/2,oy+mh*q+24,lab,15,t,'middle',false);ox+=w*q+30;return r};
+  s+=view(C,(i,j)=>cH[i]>j,'前視圖');
+  let r='';for(let a=0;a<R;a++)for(let c=0;c<C;c++)r+=cell(ox+c*q,oy+a*q,G[a][c]>0);s+=r+tx(ox+C*q/2,oy+R*q+24,'上視圖',15,t,'middle',false);ox+=C*q+30;
+  s+=view(R,(i,j)=>rH[R-1-i]>j,'右視圖');W=ox-10;H=Math.max(H,oy+Math.max(mh,R)*q+40)}
+ return{w:W,h:H,s}}
+function fGeo(o,t){
+ const{xmin,xmax,ymin,ymax}=o;if(!(xmax>xmin&&ymax>ymin))return null;
+ const W=560,m=30,k=(W-2*m)/(xmax-xmin),H=(ymax-ymin)*k+2*m,sx=v=>m+(v-xmin)*k,sy=v=>H-m-(v-ymin)*k,cid='c'+o.id,L=['','','',''];
+ const pc=t.pt[0],pc2=t.pt[1%t.pt.length],nz=(p,q)=>{const dx=q[0]-p[0],dy=q[1]-p[1],d=Math.hypot(dx,dy)||1;return[dx/d,dy/d]};
+ if(o.grid){for(let x=Math.ceil(xmin);x<=xmax;x++)L[0]+=`<line x1="${sx(x)}" y1="${sy(ymin)}" x2="${sx(x)}" y2="${sy(ymax)}" stroke="${t.grid}"/>`;for(let y=Math.ceil(ymin);y<=ymax;y++)L[0]+=`<line x1="${sx(xmin)}" y1="${sy(y)}" x2="${sx(xmax)}" y2="${sy(y)}" stroke="${t.grid}"/>`}
+ if(o.axes){const ax=Math.min(Math.max(0,xmin),xmax),ay=Math.min(Math.max(0,ymin),ymax);L[0]+=ar(sx(xmin),sy(ay),sx(xmax)+8,sy(ay),t.ink,1.5)+ar(sx(ax),sy(ymin),sx(ax),sy(ymax)-8,t.ink,1.5)}
+ const P={};o.pts.split('\n').forEach(l=>{const r=l.match(/^\s*(\S+?)\s*[\(\s,]\s*(-?\d*\.?\d+)\s*[,\s]\s*(-?\d*\.?\d+)/);if(r)P[r[1]]=[sx(+r[2]),sy(+r[3]),+r[2],+r[3]]});
+ o.cmds.split('\n').forEach(l=>{const a=l.trim().split(/\s+/),c=a[0],ok=n=>a.slice(1,n+1).every(x=>P[x]);
+  if(c=='seg'&&ok(2)){const p=P[a[1]],q=P[a[2]];let lb=a.slice(3).join(' ');L[2]+=`<line x1="${p[0]}" y1="${p[1]}" x2="${q[0]}" y2="${q[1]}" stroke="${t.ink}" stroke-width="${t.sw}" stroke-linecap="round"/>`;
+   if(lb){if(lb=='*')lb=fmt(Math.round(Math.hypot(p[2]-q[2],p[3]-q[3])*10)/10);const[ux,uy]=nz(p,q);L[3]+=tx((p[0]+q[0])/2+uy*16,(p[1]+q[1])/2-ux*16+5,lb,16,t,'middle',false)}}
+  else if(c=='line'&&ok(2)){const p=P[a[1]],q=P[a[2]],[ux,uy]=nz(p,q);L[2]+=`<line clip-path="url(#${cid})" x1="${p[0]-ux*2000}" y1="${p[1]-uy*2000}" x2="${p[0]+ux*2000}" y2="${p[1]+uy*2000}" stroke="${t.ink}" stroke-width="${t.sw}"/>`}
+  else if(c=='circle'&&ok(1)&&+a[2]>0){const p=P[a[1]];L[1]+=`<circle cx="${p[0]}" cy="${p[1]}" r="${a[2]*k}" fill="${t.fill}" stroke="${t.ink}" stroke-width="${t.sw}"/>`}
+  else if(c=='poly'){const n=a.slice(1).filter(x=>P[x]);if(n.length>2)L[1]+=`<polygon points="${n.map(x=>P[x][0]+','+P[x][1]).join(' ')}" fill="${t.fill}" stroke="${t.ink}" stroke-width="${t.sw}" stroke-linejoin="round"/>`}
+  else if(c=='angle'&&ok(3)){const A=P[a[1]],O=P[a[2]],B=P[a[3]],r=32,e1=Math.atan2(A[1]-O[1],A[0]-O[0]),e2=Math.atan2(B[1]-O[1],B[0]-O[0]);let d=e2-e1;while(d>Math.PI)d-=2*Math.PI;while(d<-Math.PI)d+=2*Math.PI;
+   const p1=[O[0]+r*Math.cos(e1),O[1]+r*Math.sin(e1)],p2=[O[0]+r*Math.cos(e2),O[1]+r*Math.sin(e2)],md=e1+d/2,lb=a.slice(4).join(' ')||(Math.round(Math.abs(d)*1800/Math.PI)/10+'°');
+   L[1]+=`<path d="M${O[0]},${O[1]} L${p1} A${r},${r} 0 0 ${d>0?1:0} ${p2} Z" fill="${pc2}" fill-opacity=".3" stroke="${pc2}" stroke-width="2"/>`;L[3]+=tx(O[0]+(r+20)*Math.cos(md),O[1]+(r+20)*Math.sin(md)+5,lb,15,t,'middle',false)}
+  else if(c=='rt'&&ok(3)){const A=P[a[1]],B=P[a[2]],C=P[a[3]],u=nz(B,A),v=nz(B,C),z=13;L[3]+=`<polyline points="${B[0]+z*u[0]},${B[1]+z*u[1]} ${B[0]+z*(u[0]+v[0])},${B[1]+z*(u[1]+v[1])} ${B[0]+z*v[0]},${B[1]+z*v[1]}" fill="none" stroke="${t.ink}" stroke-width="2"/>`}});
+ const N=Object.keys(P),cx=N.reduce((q,n)=>q+P[n][0],0)/(N.length||1),cy=N.reduce((q,n)=>q+P[n][1],0)/(N.length||1);
+ N.forEach((n,i)=>{const[x,y]=P[n];let dx=x-cx,dy=y-cy,d=Math.hypot(dx,dy);if(d<8){dx=1;dy=1;d=1.41}L[3]+=`<circle cx="${x}" cy="${y}" r="4.5" fill="${t.pt[i%t.pt.length]}" stroke="${t.ink}" stroke-width="1.2"/>`+tx(x+dx/d*17,y+dy/d*17+6,n,19,t)});
+ return{w:W,h:H,s:`<clipPath id="${cid}"><rect x="0" y="0" width="${W}" height="${H}"/></clipPath>`+L.join('')}}
+const FN={coord:fCoord,num:fNum,geo:fGeo,cube:fCube};
+
+function sheet(){
+ const t=TH[th],SW=1000,pad=20;let y=pad,rowY=pad,rowH=0,x=pad,body='';
+ const title=$('stitle').value.trim(),nmL=$('sname').checked;if(nmL)body+=tx(SW-pad,pad+10,'姓名：________　座號：____',15,t,'end',false);const ty=pad+(nmL?52:30);if(title){body+=tx(SW/2,ty,title,30,t,'middle',false);y=rowY=ty+26}else if(nmL){y=rowY=pad+30}
+ items.forEach(it=>{const f=FN[it.type](it,t);if(!f)return;const bw=it.half?(SW-3*pad)/2:SW-2*pad,sc=Math.min(bw/f.w,1.5),ph=f.h*sc,cap=it.title?30:0,bh=ph+cap;
+  if(x>pad&&(!it.half||x+bw>SW-pad+1)){y=rowY+rowH+pad;rowY=y;rowH=0;x=pad}
+  const px=x+(bw-f.w*sc)/2;
+  if(it.title)body+=tx(x,y+20,it.title,17,t,'start',false,t.ink);
+  body+=`<g transform="translate(${px},${y+cap}) scale(${sc})">${f.s}</g>`;
+  rowH=Math.max(rowH,bh);if(it.half&&x===pad){x+=bw+pad}else{y=rowY+rowH+pad;rowY=y;rowH=0;x=pad}});
+ const H=(x>pad?rowY+rowH:y)+pad;
+ $('paper').innerHTML=`<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 ${SW} ${H}"><defs><pattern id="gp" width="25" height="25" patternUnits="userSpaceOnUse"><path d="M25 0H0V25" fill="none" stroke="${t.grid}" stroke-width=".8"/></pattern></defs><rect width="${SW}" height="${H}" fill="${t.bg}"/>${$('sgrid').checked?`<rect width="${SW}" height="${H}" fill="url(#gp)"/>`:''}${body}</svg>`}
+
+/* UI */
+const FD={coord:[['xmin','x 最小','n'],['xmax','x 最大','n'],['ymin','y 最小','n'],['ymax','y 最大','n'],['pts','點（名稱 x y）','a'],['segs','連線（每行一組名稱）','a2'],['closed','多邊形封閉','c'],['fill','填色','c'],['grid','格線','c'],['showxy','標註座標','c']],
+ num:[['min','最小值','n'],['max','最大值','n'],['sub','每 1 單位等分數','n'],['pts','點（名稱 數值，可用 7/3）','a'],['iv','標示區間（例：2 4）','t'],['subl','等分刻度標數字','c']],geo:[['xmin','x 最小','n'],['xmax','x 最大','n'],['ymin','y 最小','n'],['ymax','y 最大','n'],['pts','點（名稱 x y）','a'],['cmds','作圖指令（每行一個）','a'],['grid','格線','c'],['axes','座標軸','c']],cube:[]};
+function renderList(){const T={coord:'座標平面',num:'數線',geo:'幾何作圖',cube:'立體方塊'};
+ $('list').innerHTML=items.map((it,i)=>`<div class="item ${i==sel?'on':''}" data-i="${i}"><span>${T[it.type]}${it.title?'：'+esc(it.title):''}</span><button data-m="-1" title="上移">↑</button><button data-m="1" title="下移">↓</button><button data-m="d" title="刪除">✕</button></div>`).join('')||'<div class="hint">按上方按鈕新增圖形</div>'}
+function renderEd(){const it=items[sel],e=$('ed');if(!it){e.innerHTML='<div class="hint">尚未選取圖形</div>';return}
+ let h=`<label>圖形標題</label><input type="text" data-k="title" value="${esc(it.title)}"><div class="chk"><input type="checkbox" data-k="half" ${it.half?'checked':''}><span>半寬（可與下一個半寬圖並排）</span></div>`;
+ FD[it.type].forEach(([k,l,ty])=>{h+=ty=='c'?`<div class="chk"><input type="checkbox" data-k="${k}" ${it[k]?'checked':''}><span>${l}</span></div>`:`<label>${l}</label>`+(ty=='a'||ty=='a2'?`<textarea data-k="${k}" ${ty=='a2'?'style="min-height:50px"':''}>${esc(it[k])}</textarea>`:`<input type="${ty=='n'?'number':'text'}" data-k="${k}" value="${esc(it[k])}">`)});
+ if(it.type=='geo')h+='<div class="hint">指令：<code>seg A B 5 cm</code> 線段（加 <code>*</code> 自動算長度）｜<code>line A B</code> 直線｜<code>circle O 3</code> 圓｜<code>angle A O B</code> 自動標度數｜<code>rt A B C</code> 直角在 B｜<code>poly A B C</code> 填色多邊形</div>';
+ if(it.type=='cube'){h+=`<div class="g2"><div><label>列數（前後）</label><input type="number" id="cR" min="1" max="8" value="${it.G.length}"></div><div><label>行數（左右）</label><input type="number" id="cC" min="1" max="8" value="${it.G[0].length}"></div></div><label>每格疊幾個（上＝後排，下＝前排）</label><table class="g">${it.G.map((r,a)=>'<tr>'+r.map((v,c)=>`<td><input type="number" min="0" max="9" value="${v}" data-r="${a}" data-c="${c}"></td>`).join('')+'</tr>').join('')}</table><div class="chk"><input type="checkbox" data-k="v3" ${it.v3?'checked':''}><span>附三視圖</span></div>`}
+ e.innerHTML=h}
+$('ed').addEventListener('input',e=>{const it=items[sel],i=e.target;if(!it)return;
+ if(i.dataset.r!==undefined)it.G[+i.dataset.r][+i.dataset.c]=Math.max(0,Math.min(9,+i.value|0));
+ else if(i.id=='cR'||i.id=='cC'){const R=Math.max(1,Math.min(8,+$('cR').value|0)),C=Math.max(1,Math.min(8,+$('cC').value|0));it.G=Array.from({length:R},(_,r)=>Array.from({length:C},(_,c)=>(it.G[r]&&it.G[r][c])||0));renderEd()}
+ else if(i.dataset.k){const k=i.dataset.k;it[k]=i.type=='checkbox'?i.checked:i.type=='number'?+i.value:i.value;if(k=='title')renderList()}
+ sheet()});
+$('list').onclick=e=>{const r=e.target.closest('.item');if(!r)return;const i=+r.dataset.i,m=e.target.dataset.m;
+ if(m=='d'){items.splice(i,1);sel=Math.max(0,Math.min(sel,items.length-1))}
+ else if(m){const j=i+ +m;if(j>=0&&j<items.length){[items[i],items[j]]=[items[j],items[i]];sel=j}}else sel=i;
+ renderList();renderEd();sheet()};
+document.querySelectorAll('[data-add]').forEach(b=>b.onclick=()=>{items.push(mk(b.dataset.add));sel=items.length-1;renderList();renderEd();sheet()});
+$('stitle').oninput=$('sname').onchange=$('sgrid').onchange=sheet;
+$('themes').innerHTML=Object.entries(TH).map(([k,v])=>`<button class="b th ${k==th?'on':''}" data-th="${k}"><i class="dot" style="background:${v.bg}"></i>${v.n}</button>`).join('');
+$('themes').onclick=e=>{const k=(e.target.closest('[data-th]')||{dataset:{}}).dataset.th;if(!k)return;th=k;document.querySelectorAll('[data-th]').forEach(b=>b.classList.toggle('on',b.dataset.th==k));sheet()};
+document.querySelectorAll('[data-x]').forEach(b=>b.onclick=()=>{const a=b.dataset.x,sv=$('paper').querySelector('svg'),h=$('xh'),xml=new XMLSerializer().serializeToString(sv);
+ const dl=(bl,n)=>{try{const l=document.createElement('a');l.href=URL.createObjectURL(bl);l.download=n;l.click();h.textContent='已嘗試下載；若沒反應請改用「複製圖片」或截圖。'}catch(_){h.textContent='此環境無法下載，請改用「複製圖片」或截圖。'}};
+ if(a=='svg')return dl(new Blob([xml],{type:'image/svg+xml'}),'worksheet.svg');
+ const vb=sv.viewBox.baseVal,cv=document.createElement('canvas');cv.width=vb.width*2;cv.height=vb.height*2;const im=new Image();
+ im.onload=()=>{cv.getContext('2d').drawImage(im,0,0,cv.width,cv.height);cv.toBlob(async bl=>{if(a=='png')return dl(bl,'worksheet.png');
+  try{await navigator.clipboard.write([new ClipboardItem({'image/png':bl})]);h.textContent='已複製，可直接貼到 Word／PPT。'}catch(_){h.textContent='瀏覽器不允許複製，請改用截圖或下載。'}})};
+ im.src='data:image/svg+xml;charset=utf-8,'+encodeURIComponent(xml)});
+const gx=o=>({...mk('geo'),...o});
+const TP={
+ '整張學習單':()=>{const a=mk('coord'),b=mk('num'),c=mk('cube');a.half=true;a.title='座標平面上的三角形';b.title='數線上的點';c.title='立體方塊與三視圖';return[a,b,c]},
+ '角的度量':()=>[gx({title:'角的度量'})],
+ '圓與圓周角':()=>[gx({title:'圓心角與圓周角',grid:false,pts:'O 0 0\nA 3 0\nB -1.5 2.6\nC 0 -3',cmds:'circle O 3\nseg O A\nseg O B\nseg A C\nseg B C\nangle A O B\nangle A C B'})],
+ '直角三角形':()=>[gx({title:'直角三角形',xmin:-1,xmax:6,ymin:-1,ymax:4,grid:false,pts:'A 0 0\nB 4 0\nC 4 3',cmds:'poly A B C\nrt A B C\nseg A B 4 cm\nseg B C 3 cm\nseg A C 5 cm'})],
+ '平行線截線':()=>[gx({title:'平行線與截線',ymin:-3,ymax:3,grid:false,pts:'A -4 1\nB 4 1\nC -4 -1\nD 4 -1\nE -1.5 3\nF 1.5 -3',cmds:'line A B\nline C D\nline E F'})]};
+$('tpl').innerHTML=Object.keys(TP).map(k=>`<button class="b" data-tp="${k}">${k}</button>`).join('');
+$('tpl').onclick=e=>{const k=e.target.dataset.tp;if(!k)return;items=TP[k]();sel=0;$('stitle').value=items.length>1?'三角形、數線與立體方塊':items[0].title;renderList();renderEd();sheet()};
+renderList();renderEd();sheet();
+</script></body></html>

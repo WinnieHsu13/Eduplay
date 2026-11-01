@@ -1,0 +1,590 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Cobweb 圖與遞迴數列雙向動態教學工具</title>
+  <!-- Tailwind CSS CDN -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <!-- React & ReactDOM CDN -->
+  <script src="https://unpkg.com/react@18/umd/react.production.min.js" crossorigin></script>
+  <script src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js" crossorigin></script>
+  <!-- Babel CDN for JSX -->
+  <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+  <style>
+    @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');
+    body {
+      font-family: 'Inter', system-ui, -apple-system, sans-serif;
+    }
+  </style>
+</head>
+<body class="bg-slate-50 text-slate-800 min-h-screen">
+  <div id="root"></div>
+
+  <script type="text/babel">
+    const { useState, useEffect, useMemo, useRef } = React;
+
+    function App() {
+      // Primary states
+      const [mode, setMode] = useState('dual'); // 'single' | 'dual'
+      const [a1, setA1] = useState(20);         // Primary start point
+      const [a2, setA2] = useState(300);        // Secondary start point for dual mode
+      const [m, setM] = useState(0.5);          // Slope
+      const [c, setC] = useState(100);          // Intercept
+      const [maxSteps, setMaxSteps] = useState(8);
+      const [currentStepIndex, setCurrentStepIndex] = useState(0); // Step progression
+      const [isPlaying, setIsPlaying] = useState(false);
+      const [isSweeping, setIsSweeping] = useState(false); // Continuous sweep animation
+      const [speed, setSpeed] = useState(700);
+      const [activeTab, setActiveTab] = useState('steps'); // 'steps', 'table', 'questions'
+
+      // Fixed point calculation: x = m*x + c  =>  x = c / (1-m)
+      const fixedPoint = useMemo(() => {
+        if (Math.abs(1 - m) < 0.0001) return null;
+        return c / (1 - m);
+      }, [m, c]);
+
+      // Helper to generate trajectory for a given starting point
+      const generateTrajectory = (startVal) => {
+        const seq = [startVal];
+        const points = [{ x: startVal, y: startVal, label: `Start (${startVal})` }];
+        const details = [];
+
+        let currentX = startVal;
+        for (let i = 0; i < maxSteps; i++) {
+          const nextY = m * currentX + c;
+          seq.push(nextY);
+
+          // Vertical move
+          points.push({ x: currentX, y: nextY, type: 'vertical', stepNum: i + 1, from: currentX, to: nextY });
+          details.push({
+            n: i + 1,
+            type: 'vertical',
+            an: currentX,
+            anNext: nextY,
+            title: `Step 1 (第 ${i+1} 輪)：垂直投射`,
+            desc: `x = ${currentX.toFixed(2)} 代入 y = ${m}x + ${c}，得 y = ${nextY.toFixed(2)}`,
+            coord: `(${currentX.toFixed(1)}, ${currentX.toFixed(1)}) → (${currentX.toFixed(1)}, ${nextY.toFixed(1)})`
+          });
+
+          // Horizontal move
+          points.push({ x: nextY, y: nextY, type: 'horizontal', stepNum: i + 1, from: currentX, to: nextY });
+          details.push({
+            n: i + 1,
+            type: 'horizontal',
+            an: currentX,
+            anNext: nextY,
+            title: `Step 2 (第 ${i+1} 輪)：水平轉化`,
+            desc: `沿 y = x 水平平移，將值 ${nextY.toFixed(2)} 轉為下一次輸入 x`,
+            coord: `(${currentX.toFixed(1)}, ${nextY.toFixed(1)}) → (${nextY.toFixed(1)}, ${nextY.toFixed(1)})`
+          });
+
+          currentX = nextY;
+        }
+
+        return { sequence: seq, pathPoints: points, details };
+      };
+
+      // Trajectories for primary (A) and secondary (B)
+      const trajA = useMemo(() => generateTrajectory(a1), [a1, m, c, maxSteps]);
+      const trajB = useMemo(() => generateTrajectory(a2), [a2, m, c, maxSteps]);
+
+      const totalSegments = trajA.details.length;
+
+      // Auto-sweep animation effect (sweep a1 smoothly back and forth)
+      useEffect(() => {
+        let animationFrame;
+        let sweepDir = 1; // 1: increasing, -1: decreasing
+        let currentSweepA = a1;
+
+        if (isSweeping) {
+          setIsPlaying(false);
+          const animateSweep = () => {
+            currentSweepA += sweepDir * 1.5;
+            if (currentSweepA >= 340) {
+              currentSweepA = 340;
+              sweepDir = -1;
+            } else if (currentSweepA <= 10) {
+              currentSweepA = 10;
+              sweepDir = 1;
+            }
+            setA1(Math.round(currentSweepA));
+            animationFrame = requestAnimationFrame(animateSweep);
+          };
+          animationFrame = requestAnimationFrame(animateSweep);
+        }
+
+        return () => cancelAnimationFrame(animationFrame);
+      }, [isSweeping]);
+
+      // Step-by-step playback timer
+      useEffect(() => {
+        let timer;
+        if (isPlaying && !isSweeping) {
+          timer = setInterval(() => {
+            setCurrentStepIndex((prev) => {
+              if (prev >= totalSegments) {
+                setIsPlaying(false);
+                return prev;
+              }
+              return prev + 1;
+            });
+          }, speed);
+        }
+        return () => clearInterval(timer);
+      }, [isPlaying, isSweeping, totalSegments, speed]);
+
+      // Reset step index when inputs change manually
+      const handleA1Change = (val) => {
+        setA1(val);
+        setCurrentStepIndex(0);
+      };
+
+      const handleA2Change = (val) => {
+        setA2(val);
+        setCurrentStepIndex(0);
+      };
+
+      // SVG dimensions
+      const svgSize = 520;
+      const padding = 50;
+      const xMin = 0, xMax = 360;
+      const yMin = 0, yMax = 360;
+
+      const toSvgX = (x) => padding + ((x - xMin) / (xMax - xMin)) * (svgSize - 2 * padding);
+      const toSvgY = (y) => svgSize - padding - ((y - yMin) / (yMax - yMin)) * (svgSize - 2 * padding);
+
+      return (
+        <div class="max-w-7xl mx-auto px-4 py-6 space-y-6">
+          {/* Header */}
+          <header class="bg-white rounded-2xl p-6 shadow-sm border border-slate-200 flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
+            <div>
+              <div class="inline-flex items-center gap-2 bg-indigo-50 text-indigo-700 font-semibold text-xs px-3 py-1 rounded-full mb-2">
+                高中數學 / 遞迴數列 / 雙向動態幾何教學
+              </div>
+              <h1 class="text-2xl font-bold text-slate-900">Cobweb 蛛網圖：雙向包夾與動態演變</h1>
+              <p class="text-slate-500 text-sm mt-1">同時觀察「a₁ = 20（由下往上）」與「a₁ = 300（由上往下）」雙向逼近不動點 200</p>
+            </div>
+            
+            {/* Mode & Slope Presets */}
+            <div class="flex flex-wrap gap-2 items-center">
+              <span class="text-xs text-slate-500 font-medium">遞迴模型：</span>
+              <button 
+                onClick={() => { setM(0.5); setC(100); setCurrentStepIndex(0); }}
+                class={`px-3 py-1.5 rounded-lg text-xs font-semibold transition ${m === 0.5 ? 'bg-indigo-600 text-white shadow-sm' : 'bg-slate-100 text-slate-700 hover:bg-slate-200'}`}
+              >
+                標準收斂 (m = 0.5)
+              </button>
+              <button 
+                onClick={() => { setM(-0.5); setC(300); setCurrentStepIndex(0); }}
+                class={`px-3 py-1.5 rounded-lg text-xs font-semibold transition ${m === -0.5 ? 'bg-indigo-600 text-white shadow-sm' : 'bg-slate-100 text-slate-700 hover:bg-slate-200'}`}
+              >
+                雙向震盪螺旋 (m = -0.5)
+              </button>
+            </div>
+          </header>
+
+          {/* Interactive Dual Control Bar */}
+          <div class="bg-white rounded-2xl p-5 shadow-sm border border-slate-200 space-y-4">
+            <div class="flex flex-col lg:flex-row items-center justify-between gap-4 pb-3 border-b border-slate-100">
+              
+              {/* Mode Toggle */}
+              <div class="flex items-center bg-slate-100 p-1 rounded-xl w-full lg:w-auto">
+                <button
+                  onClick={() => { setMode('single'); setCurrentStepIndex(0); }}
+                  class={`flex-1 lg:flex-none px-4 py-1.5 rounded-lg text-xs font-bold transition ${mode === 'single' ? 'bg-white text-indigo-600 shadow-sm' : 'text-slate-600'}`}
+                >
+                  單一起點模式
+                </button>
+                <button
+                  onClick={() => { setMode('dual'); setCurrentStepIndex(0); }}
+                  class={`flex-1 lg:flex-none px-4 py-1.5 rounded-lg text-xs font-bold transition ${mode === 'dual' ? 'bg-white text-indigo-600 shadow-sm' : 'text-slate-600'}`}
+                >
+                  ⚡ 雙向同場對比模式 (20 vs 300)
+                </button>
+              </div>
+
+              {/* Dynamic Continuous Sweep Toggle */}
+              <div class="flex items-center gap-3 w-full lg:w-auto justify-end">
+                <button
+                  onClick={() => setIsSweeping(!isSweeping)}
+                  class={`px-4 py-2 rounded-xl text-xs font-bold transition flex items-center gap-1.5 shadow-sm ${isSweeping ? 'bg-rose-500 text-white animate-pulse' : 'bg-amber-500 hover:bg-amber-600 text-white'}`}
+                >
+                  {isSweeping ? '⏸ 停止動態掃描' : '🔄 開始雙向連續動態掃描'}
+                </button>
+              </div>
+            </div>
+
+            {/* Sliders Area */}
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+              {/* Slider 1 (Primary Path A - Blue) */}
+              <div class="flex items-center gap-3 bg-blue-50/70 p-3 rounded-xl border border-blue-200">
+                <span class="w-3 h-3 rounded-full bg-blue-600 flex-shrink-0"></span>
+                <span class="text-xs font-bold text-blue-900 whitespace-nowrap">路徑 A 初項 a₁：</span>
+                <input 
+                  type="range" min="0" max="350" step="5" value={a1} 
+                  disabled={isSweeping}
+                  onChange={(e) => handleA1Change(Number(e.target.value))}
+                  class="w-full accent-blue-600 cursor-pointer disabled:opacity-50"
+                />
+                <span class="text-xs font-mono font-bold bg-white text-blue-800 px-2.5 py-1 rounded-md border border-blue-200">
+                  {a1}
+                </span>
+              </div>
+
+              {/* Slider 2 (Secondary Path B - Amber/Red, visible in Dual Mode) */}
+              {mode === 'dual' ? (
+                <div class="flex items-center gap-3 bg-amber-50/70 p-3 rounded-xl border border-amber-200">
+                  <span class="w-3 h-3 rounded-full bg-amber-600 flex-shrink-0"></span>
+                  <span class="text-xs font-bold text-amber-900 whitespace-nowrap">路徑 B 初項 b₁：</span>
+                  <input 
+                    type="range" min="0" max="350" step="5" value={a2} 
+                    disabled={isSweeping}
+                    onChange={(e) => handleA2Change(Number(e.target.value))}
+                    class="w-full accent-amber-600 cursor-pointer disabled:opacity-50"
+                  />
+                  <span class="text-xs font-mono font-bold bg-white text-amber-800 px-2.5 py-1 rounded-md border border-amber-200">
+                    {a2}
+                  </span>
+                </div>
+              ) : (
+                <div class="flex items-center justify-center p-3 text-xs text-slate-400 italic bg-slate-50 rounded-xl border border-slate-200">
+                  切換至「雙向對比模式」可同時加入第二條對比蛛網軌跡
+                </div>
+              )}
+            </div>
+          </div>
+
+          {/* Main Grid Content */}
+          <div class="grid grid-cols-1 lg:grid-cols-12 gap-6">
+            
+            {/* Left Column: SVG Visualization (7 cols) */}
+            <div class="lg:col-span-7 bg-white rounded-2xl p-5 shadow-sm border border-slate-200 flex flex-col justify-between">
+              <div>
+                <div class="flex justify-between items-center mb-3">
+                  <h2 class="font-bold text-slate-800 flex items-center gap-2 text-sm md:text-base">
+                    <span class="w-3 h-3 rounded-full bg-indigo-600 inline-block"></span>
+                    蛛網圖幾何軌跡
+                    {mode === 'dual' && <span class="text-xs text-indigo-600 font-normal">（雙向同場演示）</span>}
+                  </h2>
+                  <div class="text-xs font-mono bg-slate-100 px-3 py-1 rounded-md text-slate-700 font-medium">
+                    y = {m}x + {c}
+                  </div>
+                </div>
+
+                {/* SVG Canvas */}
+                <div class="relative w-full aspect-square max-w-[500px] mx-auto bg-slate-50 rounded-xl border border-slate-200 overflow-hidden flex items-center justify-center">
+                  <svg viewBox={`0 0 ${svgSize} ${svgSize}`} class="w-full h-full">
+                    {/* Grid Lines */}
+                    {[50, 100, 150, 200, 250, 300, 350].map(val => (
+                      <g key={val}>
+                        <line x1={toSvgX(val)} y1={padding} x2={toSvgX(val)} y2={svgSize - padding} stroke="#f1f5f9" strokeDasharray="3,3" />
+                        <line x1={padding} y1={toSvgY(val)} x2={svgSize - padding} y2={toSvgY(val)} stroke="#f1f5f9" strokeDasharray="3,3" />
+                        <text x={toSvgX(val)} y={svgSize - padding + 18} fontSize="10" fill="#94a3b8" textAnchor="middle">{val}</text>
+                        <text x={padding - 10} y={toSvgY(val) + 3} fontSize="10" fill="#94a3b8" textAnchor="end">{val}</text>
+                      </g>
+                    ))}
+
+                    {/* Main Coordinate Axes */}
+                    <line x1={padding} y1={svgSize - padding} x2={svgSize - padding + 15} y2={svgSize - padding} stroke="#475569" strokeWidth="2" />
+                    <line x1={padding} y1={svgSize - padding} x2={padding} y2={padding - 15} stroke="#475569" strokeWidth="2" />
+                    <text x={svgSize - padding + 15} y={svgSize - padding + 15} fontSize="11" fontWeight="bold" fill="#334155">x (aₙ)</text>
+                    <text x={padding - 20} y={padding - 15} fontSize="11" fontWeight="bold" fill="#334155">y (aₙ₊₁)</text>
+
+                    {/* Reference Line y = x */}
+                    <line 
+                      x1={toSvgX(0)} y1={toSvgY(0)} 
+                      x2={toSvgX(350)} y2={toSvgY(350)} 
+                      stroke="#94a3b8" strokeWidth="2" strokeDasharray="5,5" 
+                    />
+                    <text x={toSvgX(330)} y={toSvgY(345)} fontSize="11" fill="#64748b" fontWeight="600">y = x</text>
+
+                    {/* Target Function Line y = m*x + c */}
+                    <line 
+                      x1={toSvgX(0)} y1={toSvgY(c)} 
+                      x2={toSvgX(350)} y2={toSvgY(m * 350 + c)} 
+                      stroke="#4f46e5" strokeWidth="2.5" 
+                    />
+                    <text x={toSvgX(260)} y={toSvgY(m * 260 + c) - 10} fontSize="11" fill="#4f46e5" fontWeight="bold">y = {m}x + {c}</text>
+
+                    {/* Fixed Point (Intersection) */}
+                    {fixedPoint && fixedPoint >= 0 && fixedPoint <= 350 && (
+                      <g>
+                        <line x1={toSvgX(fixedPoint)} y1={padding} x2={toSvgX(fixedPoint)} y2={svgSize - padding} stroke="#10b981" strokeDasharray="2,2" strokeWidth="1" />
+                        <circle cx={toSvgX(fixedPoint)} cy={toSvgY(fixedPoint)} r="6" fill="#10b981" />
+                        <circle cx={toSvgX(fixedPoint)} cy={toSvgY(fixedPoint)} r="10" fill="none" stroke="#10b981" strokeWidth="1.5" strokeDasharray="2,2" />
+                        <text x={toSvgX(fixedPoint) + 12} y={toSvgY(fixedPoint) + 15} fontSize="12" fontWeight="bold" fill="#047857">
+                          不動點 ({fixedPoint.toFixed(0)}, {fixedPoint.toFixed(0)})
+                        </text>
+                      </g>
+                    )}
+
+                    {/* Path A (Blue Trajectory) */}
+                    {trajA.pathPoints.slice(0, currentStepIndex + 1).map((pt, idx) => {
+                      if (idx === 0) return null;
+                      const prevPt = trajA.pathPoints[idx - 1];
+                      const isLast = idx === currentStepIndex;
+
+                      return (
+                        <g key={`A-${idx}`}>
+                          <line
+                            x1={toSvgX(prevPt.x)} y1={toSvgY(prevPt.y)}
+                            x2={toSvgX(pt.x)} y2={toSvgY(pt.y)}
+                            stroke="#2563eb"
+                            strokeWidth={isLast ? "3.5" : "2"}
+                            opacity={isLast ? "1" : "0.75"}
+                          />
+                          <circle cx={toSvgX(pt.x)} cy={toSvgY(pt.y)} r={isLast ? "5" : "3"} fill="#1d4ed8" />
+                        </g>
+                      );
+                    })}
+
+                    {/* Path B (Amber Trajectory in Dual Mode) */}
+                    {mode === 'dual' && trajB.pathPoints.slice(0, currentStepIndex + 1).map((pt, idx) => {
+                      if (idx === 0) return null;
+                      const prevPt = trajB.pathPoints[idx - 1];
+                      const isLast = idx === currentStepIndex;
+
+                      return (
+                        <g key={`B-${idx}`}>
+                          <line
+                            x1={toSvgX(prevPt.x)} y1={toSvgY(prevPt.y)}
+                            x2={toSvgX(pt.x)} y2={toSvgY(pt.y)}
+                            stroke="#d97706"
+                            strokeWidth={isLast ? "3.5" : "2"}
+                            strokeDasharray={pt.type === 'horizontal' ? '4,2' : 'none'}
+                            opacity={isLast ? "1" : "0.75"}
+                          />
+                          <circle cx={toSvgX(pt.x)} cy={toSvgY(pt.y)} r={isLast ? "5" : "3"} fill="#b45309" />
+                        </g>
+                      );
+                    })}
+
+                    {/* Path A Start Marker */}
+                    <circle cx={toSvgX(a1)} cy={toSvgY(a1)} r="5" fill="#2563eb" />
+                    <text x={toSvgX(a1) - 10} y={toSvgY(a1) + 18} fontSize="11" fontWeight="bold" fill="#1e40af">
+                      a₁={a1}
+                    </text>
+
+                    {/* Path B Start Marker (Dual Mode) */}
+                    {mode === 'dual' && (
+                      <g>
+                        <circle cx={toSvgX(a2)} cy={toSvgY(a2)} r="5" fill="#d97706" />
+                        <text x={toSvgX(a2) - 10} y={toSvgY(a2) + 18} fontSize="11" fontWeight="bold" fill="#92400e">
+                          b₁={a2}
+                        </text>
+                      </g>
+                    )}
+                  </svg>
+                </div>
+              </div>
+
+              {/* Animation Action Controls */}
+              <div class="mt-4 bg-slate-50 rounded-xl p-4 border border-slate-200 flex flex-col sm:flex-row items-center justify-between gap-4">
+                <div class="flex items-center gap-2">
+                  <button
+                    onClick={() => { setIsPlaying(false); setIsSweeping(false); setCurrentStepIndex(0); }}
+                    class="p-2 rounded-lg bg-white border border-slate-200 text-slate-700 hover:bg-slate-100 font-semibold text-xs flex items-center gap-1 shadow-sm"
+                  >
+                    ↺ 重置
+                  </button>
+                  <button
+                    onClick={() => { setIsPlaying(false); setIsSweeping(false); setCurrentStepIndex(prev => Math.max(0, prev - 1)); }}
+                    disabled={currentStepIndex === 0}
+                    class="px-3 py-1.5 rounded-lg bg-white border border-slate-200 text-slate-700 hover:bg-slate-100 disabled:opacity-40 font-semibold text-xs shadow-sm"
+                  >
+                    ◀ 上一步
+                  </button>
+                  <button
+                    onClick={() => { setIsPlaying(false); setIsSweeping(false); setCurrentStepIndex(prev => Math.min(totalSegments, prev + 1)); }}
+                    disabled={currentStepIndex >= totalSegments}
+                    class="px-3 py-1.5 rounded-lg bg-indigo-600 text-white hover:bg-indigo-700 disabled:opacity-40 font-semibold text-xs shadow-sm"
+                  >
+                    下一步 ▶
+                  </button>
+                  <button
+                    onClick={() => { setIsSweeping(false); setIsPlaying(!isPlaying); }}
+                    disabled={currentStepIndex >= totalSegments}
+                    class={`px-3 py-1.5 rounded-lg font-semibold text-xs shadow-sm text-white transition ${isPlaying ? 'bg-amber-500 hover:bg-amber-600' : 'bg-emerald-600 hover:bg-emerald-700'}`}
+                  >
+                    {isPlaying ? '⏸ 暫停' : '▶ 逐步播放'}
+                  </button>
+                </div>
+
+                <div class="text-xs font-semibold text-slate-600 bg-white px-3 py-1.5 rounded-lg border border-slate-200 shadow-sm">
+                  蛛網繪製進度：<span class="text-indigo-600 font-bold">{currentStepIndex}</span> / {totalSegments} 動作
+                </div>
+              </div>
+            </div>
+
+            {/* Right Column: Pedagogy & Dual Numerical Comparison (5 cols) */}
+            <div class="lg:col-span-5 flex flex-col gap-4">
+              
+              {/* Tabs Header */}
+              <div class="flex bg-slate-200/80 p-1 rounded-xl">
+                <button
+                  onClick={() => setActiveTab('steps')}
+                  class={`flex-1 py-2 text-xs font-bold rounded-lg transition ${activeTab === 'steps' ? 'bg-white text-indigo-600 shadow-sm' : 'text-slate-600 hover:text-slate-900'}`}
+                >
+                  ① 雙向動作拆解
+                </button>
+                <button
+                  onClick={() => setActiveTab('table')}
+                  class={`flex-1 py-2 text-xs font-bold rounded-lg transition ${activeTab === 'table' ? 'bg-white text-indigo-600 shadow-sm' : 'text-slate-600 hover:text-slate-900'}`}
+                >
+                  ② 雙向數列對比表
+                </button>
+                <button
+                  onClick={() => setActiveTab('questions')}
+                  class={`flex-1 py-2 text-xs font-bold rounded-lg transition ${activeTab === 'questions' ? 'bg-white text-indigo-600 shadow-sm' : 'text-slate-600 hover:text-slate-900'}`}
+                >
+                  ③ 教師問答與推導
+                </button>
+              </div>
+
+              {/* Tab 1: Action Breakdown */}
+              {activeTab === 'steps' && (
+                <div class="bg-white rounded-2xl p-5 shadow-sm border border-slate-200 space-y-4 flex-1 flex flex-col justify-between">
+                  <div class="space-y-3">
+                    <h3 class="font-bold text-slate-800 text-base">Cobweb 雙向畫法的三大靈魂步驟</h3>
+                    
+                    {/* Dual status notification */}
+                    {mode === 'dual' ? (
+                      <div class="p-3 bg-indigo-50 rounded-xl border border-indigo-200 text-xs text-indigo-900 space-y-1">
+                        <span class="font-bold block text-indigo-900">⚡ 當前為「雙向對比模式」：</span>
+                        <div>🔵 藍路徑 (a₁={a1})：由下往上推動逼近 200</div>
+                        <div>🟠 橘路徑 (b₁={a2})：由上往下推動逼近 200</div>
+                        <div class="text-[11px] text-indigo-700 mt-1 font-medium">按「下一步」可看到兩組蛛網同時從上下兩端向中間點包夾！</div>
+                      </div>
+                    ) : (
+                      <div class="p-3 bg-slate-100 rounded-xl text-xs text-slate-700">
+                        目前初項 a₁ = {a1}。{a1 < 200 ? '正在由下往上遞增收斂 ↗' : a1 > 200 ? '正在由上往下遞減收斂 ↘' : '恰好落在不動點 200 保持不變'}
+                      </div>
+                    )}
+
+                    {/* Step Cards */}
+                    <div class="space-y-2.5 text-xs">
+                      <div class="p-3 rounded-xl border bg-blue-50 border-blue-200">
+                        <div class="font-bold text-blue-900 mb-1">Step 1：垂直往函數線 y = f(x) 走</div>
+                        <p class="text-blue-800">把當前輸入代入遞迴式 a<sub>n+1</sub> = {m}a<sub>n</sub> + {c}，計算出下一個數值。</p>
+                      </div>
+
+                      <div class="p-3 rounded-xl border bg-pink-50 border-pink-200">
+                        <div class="font-bold text-pink-900 mb-1">Step 2：水平往等值線 y = x 走</div>
+                        <p class="text-pink-800">把縱座標 a<sub>n+1</sub> 轉化為橫座標，作為下一輪計算的「新輸入」。</p>
+                      </div>
+
+                      <div class="p-3 rounded-xl border bg-emerald-50 border-emerald-200">
+                        <div class="font-bold text-emerald-900 mb-1">Step 3：重複「垂直 → 水平」循環</div>
+                        <p class="text-emerald-800">兩端的幾何折線會在 y = x 與 y = f(x) 之間不斷縮小範圍，最終交會於不動點。</p>
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Dynamic Step Detail Card */}
+                  <div class="p-3 bg-amber-50 rounded-xl border border-amber-200 text-xs text-amber-900">
+                    <span class="font-bold block mb-1">🔍 當前步驟解析 (第 {Math.floor(currentStepIndex / 2) + 1} 輪)：</span>
+                    {currentStepIndex > 0 ? (
+                      <div class="space-y-1 font-mono text-[11px]">
+                        <div>🔵 藍線 (a₁={a1})：{trajA.details[currentStepIndex - 1]?.desc}</div>
+                        {mode === 'dual' && <div>🟠 橘線 (b₁={a2})：{trajB.details[currentStepIndex - 1]?.desc}</div>}
+                      </div>
+                    ) : (
+                      <span class="text-amber-700 italic">點擊「下一步」以逐步觀察幾何繪製細節。</span>
+                    )}
+                  </div>
+                </div>
+              )}
+
+              {/* Tab 2: Dual Sequence Numerical Table */}
+              {activeTab === 'table' && (
+                <div class="bg-white rounded-2xl p-5 shadow-sm border border-slate-200 space-y-4 flex-1 flex flex-col justify-between">
+                  <div>
+                    <h3 class="font-bold text-slate-800 text-base mb-1">雙向數列收斂數值對比表</h3>
+                    <p class="text-xs text-slate-500 mb-3">觀察不論從 20 還是 300 出發，與目標 200 的距離如何同時減半：</p>
+
+                    <div class="overflow-x-auto rounded-xl border border-slate-200 max-h-[300px]">
+                      <table class="w-full text-left text-xs">
+                        <thead class="bg-slate-100 text-slate-700 font-bold sticky top-0">
+                          <tr>
+                            <th class="p-2">n</th>
+                            <th class="p-2 text-blue-700">藍線 aₙ (初項 {a1})</th>
+                            <th class="p-2 text-blue-700">距離 (aₙ - 200)</th>
+                            {mode === 'dual' && <th class="p-2 text-amber-700">橘線 bₙ (初項 {a2})</th>}
+                            {mode === 'dual' && <th class="p-2 text-amber-700">距離 (bₙ - 200)</th>}
+                          </tr>
+                        </thead>
+                        <tbody class="divide-y divide-slate-100 font-mono text-[11px]">
+                          {trajA.sequence.slice(0, 8).map((valA, idx) => {
+                            const diffA = valA - 200;
+                            const valB = trajB.sequence[idx];
+                            const diffB = valB - 200;
+                            const isCurrent = Math.floor(currentStepIndex / 2) === idx;
+
+                            return (
+                              <tr key={idx} class={isCurrent ? 'bg-indigo-50 font-bold' : 'hover:bg-slate-50'}>
+                                <td class="p-2 font-sans font-bold text-slate-500">{idx + 1}</td>
+                                <td class="p-2 text-blue-700">{valA.toFixed(3)}</td>
+                                <td class="p-2 text-blue-600">{diffA > 0 ? `+${diffA.toFixed(3)}` : diffA.toFixed(3)}</td>
+                                {mode === 'dual' && <td class="p-2 text-amber-700">{valB.toFixed(3)}</td>}
+                                {mode === 'dual' && <td class="p-2 text-amber-600">{diffB > 0 ? `+${diffB.toFixed(3)}` : diffB.toFixed(3)}</td>}
+                              </tr>
+                            );
+                          })}
+                        </tbody>
+                      </table>
+                    </div>
+                  </div>
+
+                  <div class="p-3 bg-indigo-50 rounded-xl border border-indigo-200 text-xs text-indigo-900 space-y-1">
+                    <span class="font-bold block">💡 雙向收斂關鍵結論：</span>
+                    <p class="text-[11px] leading-relaxed">
+                      由下往上：$-180 \rightarrow -90 \rightarrow -45 \rightarrow -22.5 \dots$<br/>
+                      由上往下：$+100 \rightarrow +50 \rightarrow +25 \rightarrow +12.5 \dots$<br/>
+                      <b>正負距離均以公比 0.5 等比遞減，因此呈現雙向對稱包夾！</b>
+                    </p>
+                  </div>
+                </div>
+              )}
+
+              {/* Tab 3: Teacher Questions & Math Proof */}
+              {activeTab === 'questions' && (
+                <div class="bg-white rounded-2xl p-5 shadow-sm border border-slate-200 space-y-4 flex-1">
+                  <h3 class="font-bold text-slate-800 text-base mb-1">課堂引導與雙向數學證明</h3>
+                  
+                  <div class="space-y-3 text-xs">
+                    <div class="p-3 rounded-xl bg-slate-50 border border-slate-200">
+                      <div class="font-bold text-slate-800 mb-1">思考 1：雙向包夾提問</div>
+                      <p class="text-slate-600">「如果 a<sub>1</sub> = 20 會從下方往上爬，而 a<sub>1</sub> = 300 會從上方往下降，兩者會在何處相遇？」</p>
+                      <p class="text-slate-500 mt-1">答：兩者都會無限接近函數與 y = x 的交點 (200, 200)。</p>
+                    </div>
+
+                    <div class="p-3 rounded-xl bg-amber-50 border border-amber-200">
+                      <div class="font-bold text-amber-900 mb-1">思考 2：為什麼不會越過 200？</div>
+                      <p class="text-amber-800">「因為距離關係滿足 a<sub>n+1</sub> - 200 = 0.5(a<sub>n</sub> - 200)。正數乘 0.5 依然是正數，負數乘 0.5 依然是負數，故方向永遠不變，僅長度減半！」</p>
+                    </div>
+
+                    <div class="p-3.5 rounded-xl bg-indigo-900 text-white space-y-2">
+                      <div class="font-bold text-indigo-200 text-xs">代數推導總結：</div>
+                      <div class="font-mono text-[11px] leading-relaxed space-y-1 bg-indigo-950 p-2.5 rounded-lg border border-indigo-800">
+                        <div>a<sub>n+1</sub> - 200 = 0.5a<sub>n</sub> + 100 - 200</div>
+                        <div>a<sub>n+1</sub> - 200 = 0.5(a<sub>n</sub> - 200)</div>
+                      </div>
+                      <p class="text-[11px] text-indigo-200">
+                        幾何上的「垂直 $\rightarrow$ 水平」，在代數上就是<b>距離的不斷等比縮小</b>！
+                      </p>
+                    </div>
+                  </div>
+                </div>
+              )}
+
+            </div>
+          </div>
+        </div>
+      );
+    }
+
+    ReactDOM.createRoot(document.getElementById('root')).render(<App />);
+  </script>
+</body>
+</html>

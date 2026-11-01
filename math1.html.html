@@ -1,0 +1,1370 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>畢氏定理探索小旅程：從觀察、猜想到證明與不等式</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://unpkg.com/lucide@latest"></script>
+    <!-- MathJax for LaTeX Rendering -->
+    <script>
+        window.MathJax = {
+            tex: {
+                inlineMath: [['$', '$'], ['\\(', '\\)']],
+                displayMath: [['$$', '$$'], ['\\[', '\\]']]
+            },
+            svg: { fontCache: 'global' }
+        };
+    </script>
+    <script id="MathJax-script" async src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
+    
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Zen+Maru+Gothic:wght@400;500;700;900&family=Fredoka:wght@400;600;700&display=swap');
+        
+        body {
+            font-family: 'Zen Maru Gothic', 'Noto Sans TC', sans-serif;
+            background-color: #fdfbf7;
+            background-image: radial-gradient(#e5e7eb 1.5px, transparent 1.5px);
+            background-size: 24px 24px;
+            user-select: none;
+            -webkit-user-select: none;
+        }
+
+        .font-num {
+            font-family: 'Fredoka', sans-serif;
+        }
+
+        ::-webkit-scrollbar {
+            width: 10px;
+            height: 10px;
+        }
+        ::-webkit-scrollbar-track {
+            background: #f1f5f9;
+        }
+        ::-webkit-scrollbar-thumb {
+            background: #cbd5e1;
+            border-radius: 9999px;
+        }
+        ::-webkit-scrollbar-thumb:hover {
+            background: #94a3b8;
+        }
+
+        .cute-card {
+            background: rgba(255, 255, 255, 0.94);
+            backdrop-filter: blur(10px);
+            border: 2px solid #f3e8ff;
+            box-shadow: 0 10px 25px -5px rgba(244, 114, 182, 0.1), 0 8px 10px -6px rgba(168, 85, 247, 0.05);
+        }
+
+        .cute-button-pink {
+            background: linear-gradient(135deg, #f472b6 0%, #ec4899 100%);
+            box-shadow: 0 4px 12px rgba(236, 72, 153, 0.3);
+            transition: all 0.2s ease;
+        }
+        .cute-button-pink:hover {
+            transform: translateY(-2px) scale(1.02);
+            box-shadow: 0 6px 16px rgba(236, 72, 153, 0.4);
+        }
+        .cute-button-pink:active {
+            transform: translateY(1px) scale(0.98);
+        }
+
+        .cute-button-purple {
+            background: linear-gradient(135deg, #a855f7 0%, #8b5cf6 100%);
+            box-shadow: 0 4px 12px rgba(168, 85, 247, 0.3);
+            transition: all 0.2s ease;
+        }
+        .cute-button-purple:hover {
+            transform: translateY(-2px) scale(1.02);
+            box-shadow: 0 6px 16px rgba(168, 85, 247, 0.4);
+        }
+
+        .cute-button-mint {
+            background: linear-gradient(135deg, #34d399 0%, #10b981 100%);
+            box-shadow: 0 4px 12px rgba(16, 185, 129, 0.3);
+            transition: all 0.2s ease;
+        }
+        .cute-button-mint:hover {
+            transform: translateY(-2px) scale(1.02);
+        }
+
+        .timeline-line::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            bottom: 0;
+            left: 24px;
+            width: 4px;
+            background: #fbcfe8;
+            border-radius: 9999px;
+            z-index: 0;
+        }
+
+        @keyframes jelly-bounce {
+            0%, 100% { transform: scale(1); }
+            50% { transform: scale(1.05); }
+        }
+        .animate-jelly {
+            animation: jelly-bounce 2s infinite ease-in-out;
+        }
+    </style>
+</head>
+<body class="text-slate-700 min-h-screen flex flex-col justify-between overflow-x-hidden">
+
+    <!-- Header Navigation Bar -->
+    <header class="bg-white/90 border-b-2 border-pink-100 sticky top-0 z-40 backdrop-blur-md shadow-sm">
+        <div class="max-w-7xl mx-auto px-4 py-3 flex flex-wrap items-center justify-between gap-4">
+            <div class="flex items-center space-x-3">
+                <div class="bg-gradient-to-tr from-pink-400 to-amber-300 p-2.5 rounded-2xl shadow-md shadow-pink-200 text-white animate-jelly">
+                    <span class="text-2xl">📐</span>
+                </div>
+                <div>
+                    <h1 class="font-extrabold text-lg sm:text-xl tracking-tight text-slate-800 flex items-center gap-2">
+                        數學小探險家：畢氏定理與不等式 🌟
+                    </h1>
+                    <p class="text-xs font-bold text-pink-500">觀察 ➔ 猜想 ➔ 拼圖證明 ➔ 發展史 ➔ 餘弦與不等式</p>
+                </div>
+            </div>
+
+            <!-- Stage Navigation Buttons -->
+            <nav class="flex items-center space-x-1.5 sm:space-x-2 bg-pink-50/80 p-1.5 rounded-2xl border border-pink-100 text-xs sm:text-sm overflow-x-auto">
+                <button id="nav-btn-1" onclick="switchStage(1)" class="px-3.5 py-2 rounded-xl font-bold transition-all flex items-center space-x-1.5 bg-pink-500 text-white shadow-md shadow-pink-200">
+                    <span class="w-5 h-5 rounded-full bg-white/30 flex items-center justify-center text-xs font-num">1</span>
+                    <span class="hidden md:inline">觀察與猜想</span>
+                </button>
+                <span class="text-pink-300 font-bold">➔</span>
+                <button id="nav-btn-2" onclick="switchStage(2)" class="px-3.5 py-2 rounded-xl font-bold text-slate-500 hover:text-pink-600 hover:bg-pink-100/50 transition-all flex items-center space-x-1.5">
+                    <span class="w-5 h-5 rounded-full bg-white flex items-center justify-center text-xs font-num text-slate-500 border border-slate-200">2</span>
+                    <span class="hidden md:inline">拼圖與證明</span>
+                </button>
+                <span class="text-pink-300 font-bold">➔</span>
+                <button id="nav-btn-3" onclick="switchStage(3)" class="px-3.5 py-2 rounded-xl font-bold text-slate-500 hover:text-pink-600 hover:bg-pink-100/50 transition-all flex items-center space-x-1.5">
+                    <span class="w-5 h-5 rounded-full bg-white flex items-center justify-center text-xs font-num text-slate-500 border border-slate-200">3</span>
+                    <span class="hidden md:inline">證明思想史</span>
+                </button>
+                <span class="text-pink-300 font-bold">➔</span>
+                <button id="nav-btn-4" onclick="switchStage(4)" class="px-3.5 py-2 rounded-xl font-bold text-slate-500 hover:text-pink-600 hover:bg-pink-100/50 transition-all flex items-center space-x-1.5">
+                    <span class="w-5 h-5 rounded-full bg-white flex items-center justify-center text-xs font-num text-slate-500 border border-slate-200">4</span>
+                    <span class="hidden md:inline">餘弦與不等式</span>
+                </button>
+            </nav>
+        </div>
+    </header>
+
+    <main class="flex-grow max-w-7xl w-full mx-auto p-4 sm:p-6">
+
+        <!-- ================================================================= -->
+        <!-- STAGE 1: OBSERVATION & CONJECTURE FORMULATION -->
+        <!-- ================================================================= -->
+        <section id="stage-1" class="stage-container space-y-6">
+            <div class="cute-card rounded-3xl p-6 shadow-xl">
+                <div class="flex flex-col md:flex-row justify-between md:items-center gap-4 border-b-2 border-pink-100 pb-4 mb-6">
+                    <div>
+                        <span class="text-xs font-extrabold uppercase tracking-wider text-pink-600 bg-pink-100 px-3 py-1 rounded-full border border-pink-200">關卡一：動手拉拉看</span>
+                        <h2 class="text-2xl font-black mt-2 text-slate-800 flex items-center gap-2">
+                            <span>1. 觀察動態測量 ➔ 提出你的神奇猜想</span>
+                            <span>🔍</span>
+                        </h2>
+                        <p class="text-slate-600 text-sm mt-1 font-medium">按住並拖曳 <span class="text-emerald-600 font-bold">綠點 A</span> 或 <span class="text-rose-500 font-bold">紅點 B</span> 改變三角形邊長，觀察三個邊長與平方的秘密！</p>
+                    </div>
+                    <div class="flex items-center space-x-2 bg-amber-50 px-4 py-2.5 rounded-2xl border-2 border-amber-200 shrink-0">
+                        <span class="text-xl">✨</span>
+                        <span class="text-xs font-bold text-slate-700">已進行實驗：<strong id="stage1-count" class="text-amber-600 text-lg font-num font-extrabold">1</strong> 次</span>
+                    </div>
+                </div>
+
+                <div class="grid grid-cols-1 lg:grid-cols-12 gap-6 items-start">
+                    <!-- Interactive Canvas Container -->
+                    <div class="lg:col-span-7 bg-amber-50/50 rounded-3xl p-4 border-2 border-amber-100 flex flex-col items-center justify-center min-h-[380px] relative shadow-inner">
+                        <div class="absolute top-3 left-3 bg-white/90 px-3.5 py-1.5 rounded-full text-xs font-bold text-slate-600 border border-pink-200 flex items-center space-x-1.5 z-10 shadow-sm">
+                            <span class="text-base">👇</span>
+                            <span>拖曳 <span class="text-emerald-600 font-bold">綠點 A</span> 或 <span class="text-rose-500 font-bold">紅點 B</span> 調整長度</span>
+                        </div>
+
+                        <!-- Main Stage 1 Canvas -->
+                        <canvas id="stage1-canvas" width="500" height="340" class="w-full max-w-[500px] h-[310px] touch-none cursor-grab active:cursor-grabbing rounded-2xl bg-white shadow-md border-2 border-pink-100"></canvas>
+
+                        <!-- Presets -->
+                        <div class="flex flex-wrap justify-center gap-2 mt-3 items-center">
+                            <span class="text-xs font-bold text-slate-500">快速載入經典三邊：</span>
+                            <button onclick="setStage1Preset(3, 4)" class="px-3.5 py-1.5 bg-pink-100 hover:bg-pink-200 text-pink-700 font-bold text-xs rounded-xl border border-pink-300 transition-all font-num shadow-sm">3 - 4 - 5</button>
+                            <button onclick="setStage1Preset(5, 12)" class="px-3.5 py-1.5 bg-emerald-100 hover:bg-emerald-200 text-emerald-700 font-bold text-xs rounded-xl border border-emerald-300 transition-all font-num shadow-sm">5 - 12 - 13</button>
+                            <button onclick="setStage1Preset(6, 8)" class="px-3.5 py-1.5 bg-amber-100 hover:bg-amber-200 text-amber-800 font-bold text-xs rounded-xl border border-amber-300 transition-all font-num shadow-sm">6 - 8 - 10</button>
+                        </div>
+                    </div>
+
+                    <!-- Right Column: Live Data and Quiz -->
+                    <div class="lg:col-span-5 space-y-5">
+                        <div class="bg-white rounded-3xl p-5 border-2 border-pink-100 shadow-sm space-y-4">
+                            <h3 class="text-xs font-extrabold text-pink-500 uppercase tracking-wider flex items-center justify-between">
+                                <span>實時幾何測量數據 (網格對齊)</span>
+                                <span class="text-xs font-bold text-emerald-600 bg-emerald-50 px-2.5 py-0.5 rounded-full border border-emerald-200">直角 $\angle C = 90^\circ$</span>
+                            </h3>
+
+                            <div class="grid grid-cols-3 gap-2.5 text-center">
+                                <div class="p-3 bg-rose-50/80 rounded-2xl border border-rose-200">
+                                    <span class="text-xs font-bold text-rose-500 block">直角邊 $a$</span>
+                                    <span id="s1-val-a" class="text-lg font-black text-rose-600 font-num">3</span>
+                                    <div class="text-[11px] font-bold text-slate-500 mt-0.5">$a^2 =$ <span id="s1-sq-a" class="text-rose-600 font-num">9</span></div>
+                                </div>
+                                <div class="p-3 bg-emerald-50/80 rounded-2xl border border-emerald-200">
+                                    <span class="text-xs font-bold text-emerald-600 block">直角邊 $b$</span>
+                                    <span id="s1-val-b" class="text-lg font-black text-emerald-600 font-num">4</span>
+                                    <div class="text-[11px] font-bold text-slate-500 mt-0.5">$b^2 =$ <span id="s1-sq-b" class="text-emerald-600 font-num">16</span></div>
+                                </div>
+                                <div class="p-3 bg-amber-50/80 rounded-2xl border border-amber-200">
+                                    <span class="text-xs font-bold text-amber-600 block">斜邊 $c$</span>
+                                    <span id="s1-val-c" class="text-lg font-black text-amber-600 font-num">5.00</span>
+                                    <div class="text-[11px] font-bold text-slate-500 mt-0.5">$c^2 =$ <span id="s1-sq-c" class="text-amber-600 font-num">25</span></div>
+                                </div>
+                            </div>
+
+                            <div class="p-4 bg-slate-50 rounded-2xl border border-slate-200 space-y-2 text-xs font-bold">
+                                <div class="flex justify-between items-center text-slate-600">
+                                    <span>直接相加 ($a + b$)：</span>
+                                    <span id="s1-sum-direct" class="font-num text-slate-500">7 $\neq$ 5.00 ($c$)</span>
+                                </div>
+                                <div class="flex justify-between items-center text-slate-700">
+                                    <span>平方相加 ($a^2 + b^2$)：</span>
+                                    <span id="s1-sum-ab" class="font-num text-indigo-600 font-extrabold">9 + 16 = 25</span>
+                                </div>
+                                <div class="flex justify-between items-center border-t border-slate-200 pt-2 text-slate-800">
+                                    <span>斜邊平方 ($c^2$)：</span>
+                                    <span id="s1-sum-c" class="font-num font-black text-amber-600">25</span>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Cute Conjecture Form -->
+                        <div class="bg-gradient-to-br from-pink-50 to-purple-50 rounded-3xl p-5 border-2 border-pink-200 space-y-3 shadow-sm">
+                            <div class="flex items-start space-x-2.5">
+                                <span class="text-2xl">💡</span>
+                                <div>
+                                    <h4 class="font-extrabold text-slate-800 text-sm">提出你的通用數學猜想！</h4>
+                                    <p class="text-xs font-medium text-slate-600 mt-0.5">根據上面的數據，你認為哪一個算式適用於「所有」直角三角形？</p>
+                                </div>
+                            </div>
+
+                            <div class="space-y-2 pt-1 font-bold">
+                                <label class="flex items-center p-3 bg-white rounded-2xl border border-pink-200 cursor-pointer hover:border-pink-400 transition shadow-sm">
+                                    <input type="radio" name="conjecture" value="option1" class="w-4 h-4 text-pink-500 focus:ring-pink-400">
+                                    <span class="ml-3 text-xs text-slate-700">猜想 A：$a + b = c$ （邊長直接相加）</span>
+                                </label>
+                                <label class="flex items-center p-3 bg-white rounded-2xl border-2 border-pink-300 cursor-pointer hover:border-pink-500 transition shadow-sm">
+                                    <input type="radio" name="conjecture" value="option2" class="w-4 h-4 text-pink-500 focus:ring-pink-400" checked>
+                                    <span class="ml-3 text-xs text-pink-600 font-black">猜想 B：$a^2 + b^2 = c^2$ （兩直角邊平方和等於斜邊平方）</span>
+                                </label>
+                                <label class="flex items-center p-3 bg-white rounded-2xl border border-pink-200 cursor-pointer hover:border-pink-400 transition shadow-sm">
+                                    <input type="radio" name="conjecture" value="option3" class="w-4 h-4 text-pink-500 focus:ring-pink-400">
+                                    <span class="ml-3 text-xs text-slate-700">猜想 C：$a^2 + b^2 = 2c^2$</span>
+                                </label>
+                            </div>
+
+                            <button onclick="submitStage1Conjecture()" class="w-full py-3 cute-button-pink text-white text-xs font-black rounded-2xl shadow-md flex items-center justify-center space-x-2">
+                                <span>確立猜想，前往拼圖證明關卡！</span>
+                                <span>🚀</span>
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- ================================================================= -->
+        <!-- STAGE 2: DISSECTION PUZZLE & ALGEBRAIC PROOF -->
+        <!-- ================================================================= -->
+        <section id="stage-2" class="stage-container hidden space-y-6">
+            <div class="cute-card rounded-3xl p-6 shadow-xl">
+                <div class="flex flex-col md:flex-row justify-between md:items-center gap-4 border-b-2 border-pink-100 pb-4 mb-6">
+                    <div>
+                        <span class="text-xs font-extrabold uppercase tracking-wider text-purple-600 bg-purple-100 px-3 py-1 rounded-full border border-purple-200">關卡二：幾何動手拼圖</span>
+                        <h2 class="text-2xl font-black mt-2 text-slate-800 flex items-center gap-2">
+                            <span>2. 趙爽弦圖大挑戰 ➔ 面積守恆證明</span>
+                            <span>🧩</span>
+                        </h2>
+                        <p class="text-slate-600 text-sm mt-1 font-medium">拖曳或點擊 4 個三角形拼滿大正方形，並拼出嚴嚴密的面積公式！</p>
+                    </div>
+
+                    <div class="flex items-center space-x-2 bg-purple-50 px-4 py-2 rounded-2xl border border-purple-200 shrink-0">
+                        <span class="text-xs font-bold text-purple-700">目前進度：</span>
+                        <span id="stage2-subphase-badge" class="text-xs font-extrabold px-3 py-1 bg-amber-400 text-amber-950 rounded-full shadow-sm">1/2 幾何拼圖挑戰</span>
+                    </div>
+                </div>
+
+                <!-- Subphase 1: Interactive Puzzle Canvas -->
+                <div id="s2-phase-1" class="grid grid-cols-1 lg:grid-cols-12 gap-6">
+                    <div class="lg:col-span-4 bg-purple-50/50 rounded-3xl p-5 border-2 border-purple-100 flex flex-col justify-between space-y-4">
+                        <div>
+                            <h3 class="font-extrabold text-slate-800 text-sm mb-2 flex items-center space-x-2">
+                                <span>🎮</span>
+                                <span>拼圖操控小幫手</span>
+                            </h3>
+                            <p class="text-xs text-slate-600 mb-4 font-medium leading-relaxed">
+                                點擊選取零件，按【旋轉 90°】調整方向，然後拖曳到大正方形角落吸附！
+                            </p>
+
+                            <div class="p-4 bg-white rounded-2xl border border-purple-200 space-y-3 shadow-sm">
+                                <div class="flex justify-between items-center text-xs font-bold text-slate-700">
+                                    <span>選中零件：<strong id="selected-piece-label" class="text-purple-600 font-extrabold">零件 #1</strong></span>
+                                    <span>旋轉角度：<strong id="selected-piece-angle" class="text-amber-600 font-num font-extrabold">0°</strong></span>
+                                </div>
+                                <button id="rotate-btn" onclick="rotateSelectedPiece()" class="w-full py-3 cute-button-purple text-white rounded-xl text-xs font-extrabold flex items-center justify-center space-x-2">
+                                    <i data-lucide="rotate-cw" class="w-4 h-4"></i>
+                                    <span>順時針旋轉 90°</span>
+                                </button>
+                                <button onclick="autoSolvePuzzle()" class="w-full py-2 bg-slate-100 hover:bg-slate-200 text-slate-600 rounded-xl text-xs font-bold transition">
+                                    ✨ 魔法自動幫我拼好
+                                </button>
+                            </div>
+                        </div>
+
+                        <div class="p-3.5 bg-white rounded-2xl border border-purple-200 shadow-sm">
+                            <div class="flex justify-between items-center text-xs font-bold mb-1.5">
+                                <span class="text-slate-600">歸位進度</span>
+                                <span id="puzzle-progress-text" class="text-purple-600 font-num font-black">0 / 4</span>
+                            </div>
+                            <div class="w-full bg-slate-100 h-3 rounded-full overflow-hidden p-0.5 border border-slate-200">
+                                <div id="puzzle-progress-bar" class="bg-gradient-to-r from-pink-400 to-purple-500 h-full rounded-full w-0 transition-all duration-300"></div>
+                            </div>
+                        </div>
+
+                        <div class="p-3.5 bg-amber-50 border border-amber-200 rounded-2xl text-xs font-bold text-amber-800 leading-relaxed">
+                            💡 <strong>小提示：</strong>大正方形邊長是 $(a+b)$，四個三角形中間留下的空隙，正好是邊長為 $c$ 的小正方形喔！
+                        </div>
+                    </div>
+
+                    <!-- Puzzle Canvas -->
+                    <div class="lg:col-span-8 bg-amber-50/40 rounded-3xl p-4 border-2 border-amber-100 flex flex-col items-center justify-center min-h-[420px] relative shadow-inner">
+                        <canvas id="stage2-puzzle-canvas" width="460" height="460" class="w-full max-w-[460px] h-[390px] touch-none cursor-grab active:cursor-grabbing rounded-2xl bg-white shadow-md border-2 border-pink-100"></canvas>
+                        
+                        <div id="puzzle-complete-banner" class="hidden absolute inset-0 bg-white/95 backdrop-blur-md rounded-3xl flex flex-col items-center justify-center p-6 text-center z-20 animate-fade-in border-4 border-emerald-200">
+                            <div class="w-20 h-20 bg-emerald-100 text-emerald-500 rounded-full flex items-center justify-center mb-3 shadow-inner border-2 border-emerald-300 animate-bounce">
+                                <span class="text-4xl">🎉</span>
+                            </div>
+                            <h3 class="text-2xl font-black text-slate-800 mb-2">拼圖完成！趙爽弦圖！</h3>
+                            <p class="text-slate-600 text-xs sm:text-sm font-bold max-w-md mb-6 leading-relaxed">
+                                太棒了！你用 4 個直角三角形與 1 個中央小正方形，完美填滿了邊長為 $(a+b)$ 的大正方形！
+                            </p>
+                            <button onclick="goToStage2Phase2()" class="px-8 py-3.5 cute-button-mint text-white font-black rounded-2xl shadow-lg flex items-center space-x-2 text-sm">
+                                <span>前往下一步：寫出面積守恆算式</span>
+                                <span>✍️</span>
+                            </button>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Subphase 2: Interactive Logic Card Drop Puzzle -->
+                <div id="s2-phase-2" class="hidden space-y-6">
+                    <div class="bg-white rounded-3xl p-6 border-2 border-purple-100 space-y-5 shadow-sm">
+                        <div class="flex items-center space-x-3 text-purple-600">
+                            <span class="text-2xl">📝</span>
+                            <h3 class="font-black text-base text-slate-800">建立面積公理算式：整體大面積 ＝ 各部分面積總和</h3>
+                        </div>
+                        <p class="text-xs font-bold text-slate-500">
+                            請點擊下方卡片，再點擊對應的算式位置：
+                        </p>
+
+                        <!-- Cards Source -->
+                        <div class="p-4 bg-purple-50/60 rounded-2xl border border-purple-200">
+                            <span class="text-xs font-extrabold text-purple-700 block mb-3">幾何面積元件（點擊選取）：</span>
+                            <div id="logic-source-container" class="flex flex-wrap gap-3 min-h-[48px]">
+                                <div onclick="selectCard('BIG_SQUARE')" id="card-BIG_SQUARE" class="logic-card px-4 py-2.5 bg-sky-500 hover:bg-sky-600 text-white text-xs font-black rounded-xl cursor-pointer shadow-md flex items-center space-x-2 transition border-2 border-sky-300">
+                                    <span>🟦 大正方形面積 $(a + b)^2$</span>
+                                </div>
+                                <div onclick="selectCard('TRIANGLES_4')" id="card-TRIANGLES_4" class="logic-card px-4 py-2.5 bg-purple-500 hover:bg-purple-600 text-white text-xs font-black rounded-xl cursor-pointer shadow-md flex items-center space-x-2 transition border-2 border-purple-300">
+                                    <span>🔺 4個直角三角形面積 $4 \times (\frac{1}{2}ab)$</span>
+                                </div>
+                                <div onclick="selectCard('INNER_SQUARE')" id="card-INNER_SQUARE" class="logic-card px-4 py-2.5 bg-emerald-500 hover:bg-emerald-600 text-white text-xs font-black rounded-xl cursor-pointer shadow-md flex items-center space-x-2 transition border-2 border-emerald-300">
+                                    <span>🟩 中央小正方形面積 $c^2$</span>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Drop Targets -->
+                        <div class="p-6 bg-slate-50 rounded-3xl border-2 border-slate-200 space-y-6">
+                            <div class="flex flex-wrap items-center justify-center gap-3 text-slate-700 text-sm font-extrabold">
+                                <div onclick="placeSelectedCard('zone-1')" id="zone-1" class="drop-zone w-64 h-16 border-2 border-dashed border-slate-300 rounded-2xl bg-white flex items-center justify-center p-2 text-slate-400 text-xs transition-all cursor-pointer hover:border-pink-400 shadow-inner">
+                                    點擊放置【整體大正方形】
+                                </div>
+
+                                <span class="text-2xl text-pink-500 font-num font-black">＝</span>
+
+                                <div onclick="placeSelectedCard('zone-2')" id="zone-2" class="drop-zone w-64 h-16 border-2 border-dashed border-slate-300 rounded-2xl bg-white flex items-center justify-center p-2 text-slate-400 text-xs transition-all cursor-pointer hover:border-pink-400 shadow-inner">
+                                    點擊放置【4個直角三角形】
+                                </div>
+
+                                <span class="text-2xl text-pink-500 font-num font-black">＋</span>
+
+                                <div onclick="placeSelectedCard('zone-3')" id="zone-3" class="drop-zone w-64 h-16 border-2 border-dashed border-slate-300 rounded-2xl bg-white flex items-center justify-center p-2 text-slate-400 text-xs transition-all cursor-pointer hover:border-pink-400 shadow-inner">
+                                    點擊放置【中央小正方形】
+                                </div>
+                            </div>
+
+                            <!-- Algebraic Expansion Steps -->
+                            <div id="proof-algebra-steps" class="hidden space-y-3 pt-4 border-t-2 border-slate-200 text-center animate-fade-in">
+                                <div class="text-xs font-bold text-slate-500">1. 展開左邊與簡化右邊三角形面積：</div>
+                                <div class="font-num text-base text-sky-700 font-black bg-sky-50 py-3 rounded-2xl border border-sky-200 shadow-sm">
+                                    $a^2 + 2ab + b^2 = 2ab + c^2$
+                                </div>
+                                <div class="text-xs font-bold text-slate-500">2. 等式兩邊同時扣掉 $2ab$（扣除 4 個三角形）：</div>
+                                <div class="font-num text-xl text-emerald-700 font-black bg-emerald-100 border-2 border-emerald-300 py-3.5 rounded-2xl shadow-md">
+                                    $a^2 + b^2 = c^2$
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="flex justify-between items-center pt-2">
+                            <button onclick="resetLogicPuzzle()" class="px-4 py-2.5 bg-slate-100 hover:bg-slate-200 text-slate-600 text-xs font-extrabold rounded-xl border border-slate-300 transition">
+                                ↺ 重置卡片
+                            </button>
+                            <button id="verify-proof-btn" onclick="verifyProofLogic()" class="px-6 py-3 cute-button-pink text-white text-xs font-black rounded-xl shadow-md flex items-center space-x-2">
+                                <i data-lucide="check-circle-2" class="w-4 h-4"></i>
+                                <span>驗證推導邏輯！</span>
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- ================================================================= -->
+        <!-- STAGE 3: HISTORY OF PROOF CONCEPTS TIMELINE -->
+        <!-- ================================================================= -->
+        <section id="stage-3" class="stage-container hidden space-y-6">
+            <div class="cute-card rounded-3xl p-6 shadow-xl space-y-6">
+                <div class="border-b-2 border-pink-100 pb-4">
+                    <span class="text-xs font-extrabold uppercase tracking-wider text-amber-700 bg-amber-100 px-3 py-1 rounded-full border border-amber-200">關卡三：數學思想時光機</span>
+                    <h2 class="text-2xl font-black mt-2 text-slate-800 flex items-center gap-2">
+                        <span>3. 「證明觀念」的歷史演進時間軸</span>
+                        <span>📜</span>
+                    </h2>
+                    <p class="text-slate-600 text-sm mt-1 font-medium">從「實務經驗測量」到「幾何推理」，再到「公理化演繹」——人類如何理解「數學證明」？</p>
+                </div>
+
+                <div class="relative timeline-line space-y-8 pl-8 pr-2 py-2">
+                    <!-- Era 1 -->
+                    <div class="relative z-10 bg-white rounded-3xl p-5 border-2 border-pink-100 shadow-sm space-y-2">
+                        <div class="absolute -left-[43px] top-5 w-8 h-8 rounded-full bg-pink-400 border-4 border-white flex items-center justify-center text-xs font-black text-white font-num shadow">1</div>
+                        <div class="flex flex-wrap justify-between items-center gap-2">
+                            <h3 class="font-black text-slate-800 text-base flex items-center gap-2">
+                                <span>古代實務經驗與測量數組</span>
+                                <span>🏕️</span>
+                            </h3>
+                            <span class="text-xs font-bold font-num text-pink-600 bg-pink-50 px-3 py-1 rounded-full border border-pink-200">約西元前 2000 - 前 1000 年</span>
+                        </div>
+                        <p class="text-xs text-slate-600 font-medium leading-relaxed">
+                            古埃及結繩者與古巴比倫人早已發現 $(3,4,5)$ 或 $(5,12,13)$ 等特定邊長組合可用於直角測量與工程。此階段停留在<strong class="text-pink-600">經驗紀錄與特例計算</strong>，尚未形成一般性證明。
+                        </p>
+                    </div>
+
+                    <!-- Era 2 -->
+                    <div class="relative z-10 bg-white rounded-3xl p-5 border-2 border-purple-100 shadow-sm space-y-2">
+                        <div class="absolute -left-[43px] top-5 w-8 h-8 rounded-full bg-purple-400 border-4 border-white flex items-center justify-center text-xs font-black text-white font-num shadow">2</div>
+                        <div class="flex flex-wrap justify-between items-center gap-2">
+                            <h3 class="font-black text-slate-800 text-base flex items-center gap-2">
+                                <span>中國勾股傳統與《周髀算經》</span>
+                                <span>⛩️</span>
+                            </h3>
+                            <span class="text-xs font-bold font-num text-purple-600 bg-purple-50 px-3 py-1 rounded-full border border-purple-200">漢代及以前文獻</span>
+                        </div>
+                        <p class="text-xs text-slate-600 font-medium leading-relaxed">
+                            《周髀算經》記載了「勾廣三，股修四，徑隅五」與趙爽弦圖。這標誌著從單純計算走向<strong class="text-purple-600">視覺幾何圖形輔助說明</strong>的重要跨越。
+                        </p>
+                    </div>
+
+                    <!-- Era 3 -->
+                    <div class="relative z-10 bg-white rounded-3xl p-5 border-2 border-emerald-100 shadow-sm space-y-2">
+                        <div class="absolute -left-[43px] top-5 w-8 h-8 rounded-full bg-emerald-400 border-4 border-white flex items-center justify-center text-xs font-black text-white font-num shadow">3</div>
+                        <div class="flex flex-wrap justify-between items-center gap-2">
+                            <h3 class="font-black text-slate-800 text-base flex items-center gap-2">
+                                <span>劉徽《九章算術注》：出入相補</span>
+                                <span>🧩</span>
+                            </h3>
+                            <span class="text-xs font-bold font-num text-emerald-600 bg-emerald-50 px-3 py-1 rounded-full border border-emerald-200">西元 3 世紀（魏晉）</span>
+                        </div>
+                        <p class="text-xs text-slate-600 font-medium leading-relaxed">
+                            劉徽運用「出入相補」（割補拼接）原理，將圖形切割拼合轉化為面積證明。這種方法強調<strong class="text-emerald-600">面積守恆與幾何構型的一般性推理</strong>。
+                        </p>
+                    </div>
+
+                    <!-- Era 4 -->
+                    <div class="relative z-10 bg-white rounded-3xl p-5 border-2 border-sky-100 shadow-sm space-y-2">
+                        <div class="absolute -left-[43px] top-5 w-8 h-8 rounded-full bg-sky-400 border-4 border-white flex items-center justify-center text-xs font-black text-white font-num shadow">4</div>
+                        <div class="flex flex-wrap justify-between items-center gap-2">
+                            <h3 class="font-black text-slate-800 text-base flex items-center gap-2">
+                                <span>歐幾里得《幾何原本》：公理化演繹</span>
+                                <span>🏛️</span>
+                            </h3>
+                            <span class="text-xs font-bold font-num text-sky-600 bg-sky-50 px-3 py-1 rounded-full border border-sky-200">約西元前 300 年</span>
+                        </div>
+                        <p class="text-xs text-slate-600 font-medium leading-relaxed">
+                            《幾何原本》卷一命題 47 代表人類思想史重大轉折：從具體問題解法轉向<strong class="text-sky-600 font-black">「定義 ➔ 公設 ➔ 命題 ➔ 演繹證明」</strong>的嚴密體系，建立科學理性基石。
+                        </p>
+                    </div>
+                </div>
+
+                <div class="bg-amber-50 rounded-3xl p-5 border-2 border-amber-200 grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div class="p-4 bg-white rounded-2xl border border-amber-200 space-y-1 shadow-sm">
+                        <span class="text-xs font-black text-amber-700 uppercase">東方計算與割補體系 (Dissection)</span>
+                        <p class="text-xs text-slate-600 font-medium leading-relaxed">
+                            以《九章算術》與劉徽注為代表，聚焦問題求解與幾何切割，具備強大實用性與直觀視覺性。
+                        </p>
+                    </div>
+                    <div class="p-4 bg-white rounded-2xl border border-amber-200 space-y-1 shadow-sm">
+                        <span class="text-xs font-black text-sky-700 uppercase">古希臘公理演繹體系 (Deductive)</span>
+                        <p class="text-xs text-slate-600 font-medium leading-relaxed">
+                            以《幾何原本》為代表，強調嚴密的邏輯鏈條，建立自洽的幾何體系。
+                        </p>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- ================================================================= -->
+        <!-- STAGE 4: GENERALIZATION: COSINE LAW & TRIANGLE INEQUALITY -->
+        <!-- ================================================================= -->
+        <section id="stage-4" class="stage-container hidden space-y-6">
+            <div class="cute-card rounded-3xl p-6 shadow-xl">
+                <div class="border-b-2 border-pink-100 pb-4 mb-6">
+                    <span class="text-xs font-extrabold uppercase tracking-wider text-rose-600 bg-rose-100 px-3 py-1 rounded-full border border-rose-200">關卡四：拉開角度的大突破</span>
+                    <h2 class="text-2xl font-black mt-2 text-slate-800 flex items-center gap-2">
+                        <span>4. 自由調整邊長與角度 ➔ 餘弦定理與不等式</span>
+                        <span>🎈</span>
+                    </h2>
+                    <p class="text-slate-600 text-sm mt-1 font-medium">調整兩邊長 $a, b$ 與頂角 $C$，觀察畢氏定理如何自然推廣為餘弦定理與三角形不等式！</p>
+                </div>
+
+                <div class="grid grid-cols-1 lg:grid-cols-12 gap-6 items-start">
+                    <!-- Left Dynamic Morphing Canvas Container -->
+                    <div class="lg:col-span-7 bg-amber-50/50 rounded-3xl p-5 border-2 border-amber-100 flex flex-col items-center space-y-4 shadow-inner">
+                        <div class="w-full space-y-3 bg-white p-4 rounded-2xl border border-pink-200 shadow-sm">
+                            <!-- Side length controls -->
+                            <div class="grid grid-cols-2 gap-3 pb-2 border-b border-pink-100">
+                                <div>
+                                    <div class="flex justify-between text-xs font-bold text-slate-700 mb-1">
+                                        <span>邊長 $a$：</span>
+                                        <span id="s4-a-val-display" class="text-rose-600 font-num font-extrabold">3</span>
+                                    </div>
+                                    <input id="s4-a-slider" type="range" min="2" max="8" value="3" step="1" class="w-full h-2 bg-rose-100 rounded-lg appearance-none cursor-pointer accent-rose-500" oninput="updateStage4Controls()">
+                                </div>
+                                <div>
+                                    <div class="flex justify-between text-xs font-bold text-slate-700 mb-1">
+                                        <span>邊長 $b$：</span>
+                                        <span id="s4-b-val-display" class="text-emerald-600 font-num font-extrabold">4</span>
+                                    </div>
+                                    <input id="s4-b-slider" type="range" min="2" max="8" value="4" step="1" class="w-full h-2 bg-emerald-100 rounded-lg appearance-none cursor-pointer accent-emerald-500" oninput="updateStage4Controls()">
+                                </div>
+                            </div>
+
+                            <!-- Angle control -->
+                            <div class="space-y-1.5">
+                                <div class="flex justify-between items-center text-xs sm:text-sm font-bold">
+                                    <span class="text-slate-700">頂角 $\angle C$ 大小：</span>
+                                    <span id="s4-angle-display" class="font-num text-lg font-black text-pink-600">90°</span>
+                                </div>
+                                <input id="s4-angle-slider" type="range" min="10" max="170" value="90" class="w-full h-3 bg-pink-100 rounded-lg appearance-none cursor-pointer accent-pink-500" oninput="updateStage4Controls()">
+                                <div class="flex justify-between text-[11px] font-num font-bold text-slate-500">
+                                    <span>10° (銳角)</span>
+                                    <button onclick="setStage4Angle(90)" class="text-pink-600 font-extrabold hover:underline bg-pink-50 px-2 py-0.5 rounded-full border border-pink-200">90° (直角臨界)</button>
+                                    <span>170° (鈍角)</span>
+                                </div>
+                            </div>
+                        </div>
+
+                        <canvas id="stage4-canvas" width="500" height="320" class="w-full max-w-[500px] h-[280px] bg-white rounded-2xl border-2 border-pink-100 shadow-md"></canvas>
+                    </div>
+
+                    <!-- Right Column: Formula & Inequalities -->
+                    <div class="lg:col-span-5 space-y-4">
+                        <!-- State Box -->
+                        <div class="bg-white rounded-3xl p-5 border-2 border-pink-100 shadow-sm space-y-3">
+                            <div class="flex justify-between items-center">
+                                <span class="text-xs font-extrabold text-slate-500 uppercase">當前三角形狀態</span>
+                                <span id="s4-triangle-badge" class="px-3 py-1 bg-pink-100 text-pink-700 font-black text-xs rounded-full border border-pink-300">
+                                    直角三角形 ($C = 90^\circ$)
+                                </span>
+                            </div>
+
+                            <div class="grid grid-cols-2 gap-2 text-center text-xs font-bold">
+                                <div class="p-3 bg-slate-50 rounded-2xl border border-slate-200">
+                                    <span class="text-slate-500 block mb-0.5">兩邊平方和 $a^2 + b^2$</span>
+                                    <span id="s4-sum-ab" class="text-base font-num font-black text-purple-600">25</span>
+                                </div>
+                                <div class="p-3 bg-slate-50 rounded-2xl border border-slate-200">
+                                    <span class="text-slate-500 block mb-0.5">對邊平方 $c^2$</span>
+                                    <span id="s4-sq-c" class="text-base font-num font-black text-pink-600">25</span>
+                                </div>
+                            </div>
+
+                            <div id="s4-relation-box" class="p-3.5 bg-pink-50 border border-pink-200 rounded-2xl text-center space-y-1">
+                                <span class="text-xs text-pink-700 font-extrabold block">平方大小關係：</span>
+                                <div id="s4-inequality-text" class="text-lg font-black font-num text-pink-600">
+                                    $c^2 = a^2 + b^2$
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Cosine Law -->
+                        <div class="bg-white rounded-3xl p-5 border-2 border-purple-100 shadow-sm space-y-2.5">
+                            <h4 class="font-extrabold text-purple-700 text-xs sm:text-sm flex items-center space-x-2">
+                                <span>📐</span>
+                                <span>一般三角形：餘弦定理 (Law of Cosines)</span>
+                            </h4>
+                            <div class="p-3 bg-purple-50 rounded-2xl border border-purple-200 font-num text-center text-sm font-black text-purple-800">
+                                $$c^2 = a^2 + b^2 - 2ab \cos(C)$$
+                            </div>
+                            <p id="s4-cosine-explanation" class="text-xs text-slate-600 font-bold leading-relaxed">
+                                當 $C=90^\circ$ 時，$\cos 90^\circ = 0$，修正項 $-2ab\cos C$ 歸零，立刻還原為畢氏定理！<strong class="text-purple-600">畢氏定理就是餘弦定理在直角時的完美臨界點！</strong>
+                            </p>
+                        </div>
+
+                        <!-- Triangle Inequality Extension -->
+                        <div class="bg-gradient-to-br from-emerald-50 to-teal-50 rounded-3xl p-5 border-2 border-emerald-200 shadow-sm space-y-2.5">
+                            <h4 class="font-extrabold text-emerald-800 text-xs sm:text-sm flex items-center space-x-2">
+                                <span>🌟</span>
+                                <span>終極延伸：三角形不等式</span>
+                            </h4>
+                            <p class="text-xs text-slate-600 font-bold leading-relaxed">
+                                當 $C \to 0^\circ$ 或 $C \to 180^\circ$ 時，三角形退化為線段，邊長 $c$ 永遠受限於：
+                            </p>
+                            <div class="p-2.5 bg-white rounded-2xl border border-emerald-300 font-num text-center text-sm font-black text-emerald-700 shadow-sm">
+                                $$|a - b| < c < a + b$$
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+    </main>
+
+    <!-- Global Cute Modal Dialog -->
+    <div id="game-modal" class="hidden fixed inset-0 z-50 bg-slate-900/40 backdrop-blur-sm flex items-center justify-center p-4">
+        <div class="bg-white border-4 border-pink-200 rounded-3xl max-w-md w-full p-6 space-y-4 shadow-2xl relative animate-jelly">
+            <div class="flex items-center space-x-3">
+                <div id="modal-icon-bg" class="p-3 rounded-2xl bg-pink-100 text-pink-500 text-2xl">
+                    <span id="modal-emoji">✨</span>
+                </div>
+                <h3 id="modal-title" class="text-lg font-black text-slate-800">訊息</h3>
+            </div>
+            <p id="modal-message" class="text-slate-600 text-xs sm:text-sm font-bold leading-relaxed whitespace-pre-line">
+                提示內容
+            </p>
+            <div class="pt-2 flex justify-end">
+                <button onclick="closeModal()" class="px-6 py-2.5 cute-button-pink text-white text-xs font-black rounded-xl shadow-md">
+                    我知道了！
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Cute Footer -->
+    <footer class="bg-white border-t-2 border-pink-100 text-slate-400 text-xs py-4 text-center font-bold">
+        <p>🌸 畢氏定理互動探索與數學思想史教學模組 🌸</p>
+    </footer>
+
+    <script>
+        let currentStage = 1;
+        let testedCount = 1;
+        let selectedLogicCard = null;
+
+        // Audio Context Synthesizer
+        const AudioCtx = window.AudioContext || window.webkitAudioContext;
+        let audioCtx = null;
+
+        function playSound(type) {
+            try {
+                if (!audioCtx) audioCtx = new AudioCtx();
+                if (audioCtx.state === 'suspended') audioCtx.resume();
+
+                const osc = audioCtx.createOscillator();
+                const gain = audioCtx.createGain();
+                osc.connect(gain);
+                gain.connect(audioCtx.destination);
+
+                if (type === 'snap') {
+                    osc.type = 'sine';
+                    osc.frequency.setValueAtTime(600, audioCtx.currentTime);
+                    osc.frequency.exponentialRampToValueAtTime(900, audioCtx.currentTime + 0.1);
+                    gain.gain.setValueAtTime(0.15, audioCtx.currentTime);
+                    gain.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + 0.12);
+                    osc.start();
+                    osc.stop(audioCtx.currentTime + 0.12);
+                } else if (type === 'success') {
+                    const notes = [523.25, 659.25, 783.99, 1046.50];
+                    notes.forEach((freq, idx) => {
+                        const subOsc = audioCtx.createOscillator();
+                        const subGain = audioCtx.createGain();
+                        subOsc.connect(subGain);
+                        subGain.connect(audioCtx.destination);
+                        subOsc.frequency.setValueAtTime(freq, audioCtx.currentTime + idx * 0.08);
+                        subGain.gain.setValueAtTime(0.12, audioCtx.currentTime + idx * 0.08);
+                        subGain.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime + idx * 0.08 + 0.28);
+                        subOsc.start(audioCtx.currentTime + idx * 0.08);
+                        subOsc.stop(audioCtx.currentTime + idx * 0.08 + 0.28);
+                    });
+                } else if (type === 'error') {
+                    osc.type = 'triangle';
+                    osc.frequency.setValueAtTime(220, audioCtx.currentTime);
+                    osc.frequency.linearRampToValueAtTime(140, audioCtx.currentTime + 0.2);
+                    gain.gain.setValueAtTime(0.15, audioCtx.currentTime);
+                    gain.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + 0.22);
+                    osc.start();
+                    osc.stop(audioCtx.currentTime + 0.22);
+                }
+            } catch (e) {}
+        }
+
+        function showModal(title, message, emoji = '✨') {
+            document.getElementById('modal-title').innerText = title;
+            document.getElementById('modal-message').innerText = message;
+            document.getElementById('modal-emoji').innerText = emoji;
+            
+            document.getElementById('game-modal').classList.remove('hidden');
+            if (window.MathJax) MathJax.typesetPromise();
+        }
+
+        function closeModal() {
+            document.getElementById('game-modal').classList.add('hidden');
+        }
+
+        function switchStage(stageNum) {
+            currentStage = stageNum;
+            
+            document.querySelectorAll('.stage-container').forEach(el => el.classList.add('hidden'));
+            document.getElementById(`stage-${stageNum}`).classList.remove('hidden');
+
+            [1, 2, 3, 4].forEach(num => {
+                const btn = document.getElementById(`nav-btn-${num}`);
+                if (num === stageNum) {
+                    btn.className = "px-3.5 py-2 rounded-xl font-bold transition-all flex items-center space-x-1.5 bg-pink-500 text-white shadow-md shadow-pink-200";
+                } else {
+                    btn.className = "px-3.5 py-2 rounded-xl font-bold text-slate-500 hover:text-pink-600 hover:bg-pink-100/50 transition-all flex items-center space-x-1.5";
+                }
+            });
+
+            if (stageNum === 1) drawStage1Canvas();
+            if (stageNum === 2) drawStage2Puzzle();
+            if (stageNum === 4) updateStage4Controls();
+
+            if (window.MathJax) MathJax.typesetPromise();
+        }
+
+        /* ========================================== */
+        /* STAGE 1: OBSERVATION & CONJECTURE LOGIC */
+        /* ========================================== */
+        let s1PointC = { x: 80, y: 250 };
+        const gridScale = 26; // px per unit
+        let s1UnitsA = 3; // vertical leg integer units (a)
+        let s1UnitsB = 4; // horizontal leg integer units (b)
+        let activeS1Handle = null;
+
+        const s1Canvas = document.getElementById('stage1-canvas');
+        const s1Ctx = s1Canvas.getContext('2d');
+
+        function initStage1Events() {
+            function getPos(e) {
+                const rect = s1Canvas.getBoundingClientRect();
+                const clientX = e.touches ? e.touches[0].clientX : e.clientX;
+                const clientY = e.touches ? e.touches[0].clientY : e.clientY;
+                return {
+                    x: (clientX - rect.left) * (s1Canvas.width / rect.width),
+                    y: (clientY - rect.top) * (s1Canvas.height / rect.height)
+                };
+            }
+
+            function onStart(e) {
+                const p = getPos(e);
+                const posA = { x: s1PointC.x + s1UnitsB * gridScale, y: s1PointC.y };
+                const posB = { x: s1PointC.x, y: s1PointC.y - s1UnitsA * gridScale };
+
+                const distA = Math.hypot(p.x - posA.x, p.y - posA.y);
+                const distB = Math.hypot(p.x - posB.x, p.y - posB.y);
+
+                if (distA < 35) {
+                    activeS1Handle = 'A';
+                } else if (distB < 35) {
+                    activeS1Handle = 'B';
+                } else {
+                    activeS1Handle = null;
+                }
+            }
+
+            function onMove(e) {
+                if (!activeS1Handle) return;
+                if (e.cancelable) e.preventDefault();
+                const p = getPos(e);
+
+                if (activeS1Handle === 'A') {
+                    const rawUnitsB = (p.x - s1PointC.x) / gridScale;
+                    s1UnitsB = Math.max(2, Math.min(14, Math.round(rawUnitsB)));
+                } else if (activeS1Handle === 'B') {
+                    const rawUnitsA = (s1PointC.y - p.y) / gridScale;
+                    s1UnitsA = Math.max(2, Math.min(8, Math.round(rawUnitsA)));
+                }
+
+                testedCount++;
+                document.getElementById('stage1-count').innerText = testedCount;
+                drawStage1Canvas();
+            }
+
+            function onEnd() { activeS1Handle = null; }
+
+            s1Canvas.addEventListener('mousedown', onStart);
+            s1Canvas.addEventListener('mousemove', onMove);
+            window.addEventListener('mouseup', onEnd);
+
+            s1Canvas.addEventListener('touchstart', onStart, { passive: false });
+            s1Canvas.addEventListener('touchmove', onMove, { passive: false });
+            window.addEventListener('touchend', onEnd);
+        }
+
+        function setStage1Preset(aUnits, bUnits) {
+            s1UnitsA = aUnits;
+            s1UnitsB = bUnits;
+            testedCount++;
+            document.getElementById('stage1-count').innerText = testedCount;
+            drawStage1Canvas();
+        }
+
+        function drawStage1Canvas() {
+            s1Ctx.clearRect(0, 0, s1Canvas.width, s1Canvas.height);
+
+            const legA_px = s1UnitsB * gridScale; // horizontal
+            const legB_px = s1UnitsA * gridScale; // vertical
+
+            const C = { x: s1PointC.x, y: s1PointC.y };
+            const A = { x: s1PointC.x + legA_px, y: s1PointC.y };
+            const B = { x: s1PointC.x, y: s1PointC.y - legB_px };
+
+            const valA = s1UnitsA;
+            const valB = s1UnitsB;
+            const sqA = valA * valA;
+            const sqB = valB * valB;
+            const sqC = sqA + sqB;
+            const valC = Math.sqrt(sqC);
+
+            document.getElementById('s1-val-a').innerText = valA;
+            document.getElementById('s1-val-b').innerText = valB;
+            document.getElementById('s1-val-c').innerText = valC.toFixed(2);
+
+            document.getElementById('s1-sq-a').innerText = sqA;
+            document.getElementById('s1-sq-b').innerText = sqB;
+            document.getElementById('s1-sq-c').innerText = sqC;
+
+            const sumDirect = valA + valB;
+            document.getElementById('s1-sum-direct').innerText = `${sumDirect} ≠ ${valC.toFixed(2)} (c)`;
+            document.getElementById('s1-sum-ab').innerText = `${sqA} + ${sqB} = ${sqC}`;
+            document.getElementById('s1-sum-c').innerText = sqC;
+
+            // Cute Grid Dots
+            s1Ctx.fillStyle = "#cbd5e1";
+            for(let x = s1PointC.x; x < s1Canvas.width; x += gridScale) {
+                for(let y = 30; y < s1Canvas.height; y += gridScale) {
+                    s1Ctx.beginPath();
+                    s1Ctx.arc(x, y, 2, 0, Math.PI * 2);
+                    s1Ctx.fill();
+                }
+            }
+
+            // Right Angle Square Indicator
+            s1Ctx.strokeStyle = "#cbd5e1";
+            s1Ctx.lineWidth = 2.5;
+            s1Ctx.beginPath();
+            s1Ctx.rect(C.x, C.y - 18, 18, 18);
+            s1Ctx.stroke();
+
+            // Triangle Area Fill
+            s1Ctx.beginPath();
+            s1Ctx.moveTo(C.x, C.y);
+            s1Ctx.lineTo(A.x, A.y);
+            s1Ctx.lineTo(B.x, B.y);
+            s1Ctx.closePath();
+            s1Ctx.fillStyle = "rgba(244, 114, 182, 0.25)";
+            s1Ctx.fill();
+            s1Ctx.strokeStyle = "#f472b6";
+            s1Ctx.lineWidth = 4;
+            s1Ctx.stroke();
+
+            // Right Angle Point C
+            s1Ctx.beginPath();
+            s1Ctx.arc(C.x, C.y, 7, 0, Math.PI * 2);
+            s1Ctx.fillStyle = "#94a3b8";
+            s1Ctx.fill();
+
+            // Handle A (Emerald Circle)
+            s1Ctx.beginPath();
+            s1Ctx.arc(A.x, A.y, 13, 0, Math.PI * 2);
+            s1Ctx.fillStyle = "#10b981";
+            s1Ctx.fill();
+            s1Ctx.strokeStyle = "#ffffff";
+            s1Ctx.lineWidth = 3;
+            s1Ctx.stroke();
+
+            // Handle B (Rose Pink Circle)
+            s1Ctx.beginPath();
+            s1Ctx.arc(B.x, B.y, 13, 0, Math.PI * 2);
+            s1Ctx.fillStyle = "#f43f5e";
+            s1Ctx.fill();
+            s1Ctx.strokeStyle = "#ffffff";
+            s1Ctx.lineWidth = 3;
+            s1Ctx.stroke();
+
+            // Text Labels
+            s1Ctx.font = "bold 13px 'Zen Maru Gothic', sans-serif";
+            s1Ctx.fillStyle = "#e11d48";
+            s1Ctx.fillText(`a = ${valA}`, C.x - 45, C.y - legB_px / 2);
+
+            s1Ctx.fillStyle = "#059669";
+            s1Ctx.fillText(`b = ${valB}`, C.x + legA_px / 2 - 15, C.y + 24);
+
+            s1Ctx.fillStyle = "#d97706";
+            s1Ctx.fillText(`c = ${valC.toFixed(2)}`, C.x + legA_px / 2 + 10, C.y - legB_px / 2 - 8);
+        }
+
+        function submitStage1Conjecture() {
+            const selected = document.querySelector('input[name="conjecture"]:checked').value;
+            if (selected === 'option2') {
+                playSound('success');
+                showModal(
+                    "太棒了！你提出了一個偉大的猜想！",
+                    `你在 ${testedCount} 次實驗中發現了 $a^2 + b^2 = c^2$！\n\n但數學家會思考：經驗測試只能涵蓋有限特例。我們如何確定對世界上「無限多個」直角三角形，這個結論都必然成立？\n\n現在進入關卡二進行【幾何拼圖與代數證明】！`,
+                    "🎉"
+                );
+                setTimeout(() => { switchStage(2); }, 2200);
+            } else {
+                playSound('error');
+                showModal(
+                    "數據與猜想不符合喔！",
+                    "請看看右邊的數據：邊長直接相加 $a + b$ 並不等於斜邊 $c$。請再觀察哪一個算式每次都精確成立！",
+                    "💡"
+                );
+            }
+        }
+
+        /* ========================================== */
+        /* STAGE 2: PUZZLE & ALGEBRAIC PROOF LOGIC    */
+        /* ========================================== */
+        const puzzleCanvas = document.getElementById('stage2-puzzle-canvas');
+        const puzzleCtx = puzzleCanvas.getContext('2d');
+
+        const boardSize = 250;
+        const boardOrigin = { x: (460 - boardSize) / 2, y: (460 - boardSize) / 2 };
+        const sideA = 65;
+        const sideB = 185;
+
+        let pieces = [
+            { id: 1, angle: 0, snapped: false, x: 50, y: 395 },
+            { id: 2, angle: 90, snapped: false, x: 150, y: 395 },
+            { id: 3, angle: 180, snapped: false, x: 250, y: 395 },
+            { id: 4, angle: 270, snapped: false, x: 350, y: 395 }
+        ];
+
+        let selectedPieceId = 1;
+        let isDraggingPiece = false;
+        let dragOffset = { x: 0, y: 0 };
+
+        const snapTargets = [
+            { id: 1, x: boardOrigin.x, y: boardOrigin.y, angle: 0 },
+            { id: 2, x: boardOrigin.x + boardSize, y: boardOrigin.y, angle: 90 },
+            { id: 3, x: boardOrigin.x + boardSize, y: boardOrigin.y + boardSize, angle: 180 },
+            { id: 4, x: boardOrigin.x, y: boardOrigin.y + boardSize, angle: 270 }
+        ];
+
+        function initStage2PuzzleEvents() {
+            function getCanvasPos(e) {
+                const rect = puzzleCanvas.getBoundingClientRect();
+                const clientX = e.touches ? e.touches[0].clientX : e.clientX;
+                const clientY = e.touches ? e.touches[0].clientY : e.clientY;
+                return {
+                    x: (clientX - rect.left) * (puzzleCanvas.width / rect.width),
+                    y: (clientY - rect.top) * (puzzleCanvas.height / rect.height)
+                };
+            }
+
+            function onStart(e) {
+                const pos = getCanvasPos(e);
+                for (let i = pieces.length - 1; i >= 0; i--) {
+                    const p = pieces[i];
+                    const dist = Math.hypot(p.x - pos.x, p.y - pos.y);
+                    if (dist < 48) {
+                        selectedPieceId = p.id;
+                        isDraggingPiece = true;
+                        dragOffset = { x: pos.x - p.x, y: pos.y - p.y };
+                        document.getElementById('selected-piece-label').innerText = `零件 #${p.id}`;
+                        document.getElementById('selected-piece-angle').innerText = `${p.angle}°`;
+                        drawStage2Puzzle();
+                        break;
+                    }
+                }
+            }
+
+            function onMove(e) {
+                if (!isDraggingPiece) return;
+                if (e.cancelable) e.preventDefault();
+                const pos = getCanvasPos(e);
+                const p = pieces.find(item => item.id === selectedPieceId);
+                if (p) {
+                    p.x = pos.x - dragOffset.x;
+                    p.y = pos.y - dragOffset.y;
+                    
+                    const target = snapTargets.find(t => t.id === p.id);
+                    if (target && Math.hypot(p.x - target.x, p.y - target.y) < 32 && p.angle === target.angle) {
+                        p.x = target.x;
+                        p.y = target.y;
+                        if (!p.snapped) {
+                            p.snapped = true;
+                            playSound('snap');
+                            updatePuzzleProgress();
+                        }
+                    } else {
+                        p.snapped = false;
+                    }
+                    drawStage2Puzzle();
+                }
+            }
+
+            function onEnd() { isDraggingPiece = false; }
+
+            puzzleCanvas.addEventListener('mousedown', onStart);
+            puzzleCanvas.addEventListener('mousemove', onMove);
+            window.addEventListener('mouseup', onEnd);
+
+            puzzleCanvas.addEventListener('touchstart', onStart, { passive: false });
+            puzzleCanvas.addEventListener('touchmove', onMove, { passive: false });
+            window.addEventListener('touchend', onEnd);
+        }
+
+        function rotateSelectedPiece() {
+            const p = pieces.find(item => item.id === selectedPieceId);
+            if (p) {
+                p.angle = (p.angle + 90) % 360;
+                document.getElementById('selected-piece-angle').innerText = `${p.angle}°`;
+                playSound('snap');
+
+                const target = snapTargets.find(t => t.id === p.id);
+                if (target && Math.hypot(p.x - target.x, p.y - target.y) < 40 && p.angle === target.angle) {
+                    p.x = target.x;
+                    p.y = target.y;
+                    p.snapped = true;
+                } else {
+                    p.snapped = false;
+                }
+
+                updatePuzzleProgress();
+                drawStage2Puzzle();
+            }
+        }
+
+        function autoSolvePuzzle() {
+            pieces.forEach(p => {
+                const target = snapTargets.find(t => t.id === p.id);
+                p.angle = target.angle;
+                p.x = target.x;
+                p.y = target.y;
+                p.snapped = true;
+            });
+            playSound('success');
+            updatePuzzleProgress();
+            drawStage2Puzzle();
+        }
+
+        function updatePuzzleProgress() {
+            const count = pieces.filter(p => p.snapped).length;
+            document.getElementById('puzzle-progress-text').innerText = `${count} / 4`;
+            document.getElementById('puzzle-progress-bar').style.width = `${(count / 4) * 100}%`;
+
+            if (count === 4) {
+                playSound('success');
+                document.getElementById('puzzle-complete-banner').classList.remove('hidden');
+            }
+        }
+
+        function drawStage2Puzzle() {
+            puzzleCtx.clearRect(0, 0, puzzleCanvas.width, puzzleCanvas.height);
+
+            // Outer Square Board (Cute Pink Frame)
+            puzzleCtx.fillStyle = "#fff5f5";
+            puzzleCtx.fillRect(boardOrigin.x, boardOrigin.y, boardSize, boardSize);
+            puzzleCtx.strokeStyle = "#f472b6";
+            puzzleCtx.lineWidth = 3;
+            puzzleCtx.strokeRect(boardOrigin.x, boardOrigin.y, boardSize, boardSize);
+
+            // Outer size label
+            puzzleCtx.fillStyle = "#64748b";
+            puzzleCtx.font = "bold 12px 'Zen Maru Gothic', sans-serif";
+            puzzleCtx.fillText("大正方形邊長 = a + b", boardOrigin.x + boardSize / 2 - 60, boardOrigin.y - 12);
+
+            // Render Puzzle Pieces
+            pieces.forEach(p => {
+                puzzleCtx.save();
+                puzzleCtx.translate(p.x, p.y);
+                puzzleCtx.rotate((p.angle * Math.PI) / 180);
+
+                if (p.id === selectedPieceId) {
+                    puzzleCtx.shadowColor = "#a855f7";
+                    puzzleCtx.shadowBlur = 12;
+                }
+
+                puzzleCtx.beginPath();
+                puzzleCtx.moveTo(0, 0);
+                puzzleCtx.lineTo(sideB, 0);
+                puzzleCtx.lineTo(0, sideA);
+                puzzleCtx.closePath();
+
+                if (p.snapped) {
+                    puzzleCtx.fillStyle = "rgba(168, 85, 247, 0.75)";
+                    puzzleCtx.strokeStyle = "#ffffff";
+                } else {
+                    puzzleCtx.fillStyle = "rgba(56, 189, 248, 0.7)";
+                    puzzleCtx.strokeStyle = "#ffffff";
+                }
+
+                puzzleCtx.lineWidth = 3;
+                puzzleCtx.fill();
+                puzzleCtx.stroke();
+
+                puzzleCtx.fillStyle = "#ffffff";
+                puzzleCtx.font = "bold 13px 'Zen Maru Gothic', sans-serif";
+                puzzleCtx.fillText(`#${p.id}`, sideB / 4, sideA / 3);
+
+                puzzleCtx.restore();
+            });
+
+            // Highlight inner square when complete
+            const allSnapped = pieces.every(p => p.snapped);
+            if (allSnapped) {
+                puzzleCtx.fillStyle = "rgba(52, 211, 153, 0.6)";
+                puzzleCtx.beginPath();
+                puzzleCtx.moveTo(boardOrigin.x + sideB, boardOrigin.y);
+                puzzleCtx.lineTo(boardOrigin.x + boardSize, boardOrigin.y + sideB);
+                puzzleCtx.lineTo(boardOrigin.x + sideA, boardOrigin.y + boardSize);
+                puzzleCtx.lineTo(boardOrigin.x, boardOrigin.y + sideA);
+                puzzleCtx.closePath();
+                puzzleCtx.fill();
+
+                puzzleCtx.fillStyle = "#065f46";
+                puzzleCtx.font = "bold 14px 'Zen Maru Gothic', sans-serif";
+                puzzleCtx.fillText("中央小正方形 c²", boardOrigin.x + boardSize / 2 - 50, boardOrigin.y + boardSize / 2 + 5);
+            }
+        }
+
+        function goToStage2Phase2() {
+            document.getElementById('s2-phase-1').classList.add('hidden');
+            document.getElementById('s2-phase-2').classList.remove('hidden');
+            document.getElementById('stage2-subphase-badge').innerText = "2/2 代數推導算式";
+            document.getElementById('stage2-subphase-badge').className = "text-xs font-black px-3 py-1 bg-emerald-400 text-emerald-950 rounded-full shadow-sm";
+            if (window.MathJax) MathJax.typesetPromise();
+        }
+
+        /* Logic Proof Cards Interactive Logic */
+        let droppedCards = { 'zone-1': null, 'zone-2': null, 'zone-3': null };
+
+        function selectCard(cardType) {
+            selectedLogicCard = cardType;
+            document.querySelectorAll('.logic-card').forEach(el => el.classList.remove('ring-4', 'ring-pink-400', 'scale-105'));
+            const activeEl = document.getElementById(`card-${cardType}`);
+            if (activeEl) activeEl.classList.add('ring-4', 'ring-pink-400', 'scale-105');
+        }
+
+        function placeSelectedCard(zoneId) {
+            if (!selectedLogicCard) return;
+
+            Object.keys(droppedCards).forEach(z => {
+                if (droppedCards[z] === selectedLogicCard) droppedCards[z] = null;
+            });
+
+            droppedCards[zoneId] = selectedLogicCard;
+            selectedLogicCard = null;
+            document.querySelectorAll('.logic-card').forEach(el => el.classList.remove('ring-4', 'ring-pink-400', 'scale-105'));
+            renderLogicZones();
+        }
+
+        function renderLogicZones() {
+            const cardMap = {
+                'BIG_SQUARE': { label: '🟦 大正方形 $(a+b)^2$', color: 'bg-sky-500' },
+                'TRIANGLES_4': { label: '🔺 4個三角形 $4\\times(\\frac{1}{2}ab)$', color: 'bg-purple-500' },
+                'INNER_SQUARE': { label: '🟩 中央小正方形 $c^2$', color: 'bg-emerald-500' }
+            };
+
+            ['zone-1', 'zone-2', 'zone-3'].forEach(zoneId => {
+                const zoneEl = document.getElementById(zoneId);
+                const type = droppedCards[zoneId];
+
+                if (type && cardMap[type]) {
+                    zoneEl.innerHTML = `<div class="${cardMap[type].color} text-white font-black text-xs px-3 py-2 rounded-xl w-full h-full flex items-center justify-center shadow-md">${cardMap[type].label}</div>`;
+                    zoneEl.classList.remove('border-dashed');
+                    zoneEl.classList.add('border-solid', 'border-pink-400');
+                } else {
+                    const placeText = zoneId === 'zone-1' ? '點擊放置【整體大正方形】' : zoneId === 'zone-2' ? '點擊放置【4個直角三角形】' : '點擊放置【中央小正方形】';
+                    zoneEl.innerHTML = placeText;
+                    zoneEl.classList.add('border-dashed');
+                    zoneEl.classList.remove('border-solid', 'border-pink-400');
+                }
+            });
+
+            if (window.MathJax) MathJax.typesetPromise();
+        }
+
+        function verifyProofLogic() {
+            if (droppedCards['zone-1'] === 'BIG_SQUARE' &&
+                droppedCards['zone-2'] === 'TRIANGLES_4' &&
+                droppedCards['zone-3'] === 'INNER_SQUARE') {
+
+                playSound('success');
+                document.getElementById('proof-algebra-steps').classList.remove('hidden');
+                showModal(
+                    "代數推理完美正確！",
+                    "你成功運用「面積守恆」推導出了畢氏定理：\n\n$$(a + b)^2 = 4 \\times (\\frac{1}{2}ab) + c^2$$\n$$a^2 + 2ab + b^2 = 2ab + c^2$$\n$$a^2 + b^2 = c^2$$\n\n這個證明適用於任何直角三角形喔！",
+                    "🎉"
+                );
+            } else {
+                playSound('error');
+                showModal(
+                    "邏輯順序再調整一下喔！",
+                    "請記住面積公理：『整體大正方形面積』必須等於『4個直角三角形總面積』加上『中央小正方形面積』！",
+                    "💡"
+                );
+            }
+        }
+
+        function resetLogicPuzzle() {
+            droppedCards = { 'zone-1': null, 'zone-2': null, 'zone-3': null };
+            selectedLogicCard = null;
+            document.querySelectorAll('.logic-card').forEach(el => el.classList.remove('ring-4', 'ring-pink-400', 'scale-105'));
+            document.getElementById('proof-algebra-steps').classList.add('hidden');
+            renderLogicZones();
+        }
+
+        /* ========================================== */
+        /* STAGE 4: COSINE LAW & TRIANGLE INEQUALITY  */
+        /* ========================================== */
+        const s4Canvas = document.getElementById('stage4-canvas');
+        const s4Ctx = s4Canvas.getContext('2d');
+
+        function setStage4Angle(val) {
+            document.getElementById('s4-angle-slider').value = val;
+            updateStage4Controls();
+        }
+
+        function updateStage4Controls() {
+            const valA = parseInt(document.getElementById('s4-a-slider').value) || 3;
+            const valB = parseInt(document.getElementById('s4-b-slider').value) || 4;
+            const angleDeg = parseInt(document.getElementById('s4-angle-slider').value) || 90;
+
+            document.getElementById('s4-a-val-display').innerText = valA;
+            document.getElementById('s4-b-val-display').innerText = valB;
+            document.getElementById('s4-angle-display').innerText = `${angleDeg}°`;
+
+            const angleRad = (angleDeg * Math.PI) / 180;
+
+            const sqA = valA * valA;
+            const sqB = valB * valB;
+            const sqSumAB = sqA + sqB;
+
+            const cosC = Math.cos(angleRad);
+            const cSq = Math.max(0.001, sqSumAB - 2 * valA * valB * cosC);
+            const valC = Math.sqrt(cSq);
+
+            document.getElementById('s4-sum-ab').innerText = sqSumAB;
+            document.getElementById('s4-sq-c').innerText = cSq.toFixed(2);
+
+            const badge = document.getElementById('s4-triangle-badge');
+            const ineqText = document.getElementById('s4-inequality-text');
+            const explanation = document.getElementById('s4-cosine-explanation');
+
+            const cosVal = cosC.toFixed(2);
+
+            if (angleDeg === 90) {
+                badge.innerText = "直角三角形 (C = 90°)";
+                badge.className = "px-3 py-1 bg-pink-100 text-pink-700 font-black text-xs rounded-full border border-pink-300";
+                ineqText.innerHTML = `<span class="text-pink-600">$c^2 = a^2 + b^2$</span>`;
+                explanation.innerHTML = `當 $C=90^\\circ$ 時，$\\cos 90^\\circ = 0$，修正項歸零。<strong class="text-pink-600">畢氏定理就是餘弦定理在直角時的特例！</strong>`;
+            } else if (angleDeg < 90) {
+                badge.innerText = `銳角三角形 (C < 90°, cos C = ${cosVal})`;
+                badge.className = "px-3 py-1 bg-emerald-100 text-emerald-700 font-black text-xs rounded-full border border-emerald-300";
+                ineqText.innerHTML = `<span class="text-emerald-600">$c^2 < a^2 + b^2$</span>`;
+                explanation.innerHTML = `因為 $\\cos C > 0$，修正項 $-2ab\\cos C$ 為負數，故 $c^2$ 比 $a^2+b^2$ <strong class="text-emerald-600">更小</strong>。`;
+            } else {
+                badge.innerText = `鈍角三角形 (C > 90°, cos C = ${cosVal})`;
+                badge.className = "px-3 py-1 bg-amber-100 text-amber-800 font-black text-xs rounded-full border border-amber-300";
+                ineqText.innerHTML = `<span class="text-amber-600">$c^2 > a^2 + b^2$</span>`;
+                explanation.innerHTML = `因為 $\\cos C < 0$，修正項 $-2ab\\cos C$ 變為正數，故 $c^2$ 比 $a^2+b^2$ <strong class="text-amber-600">更大</strong>。`;
+            }
+
+            drawStage4Canvas(valA, valB, angleRad, valC.toFixed(2));
+            if (window.MathJax) MathJax.typesetPromise();
+        }
+
+        function drawStage4Canvas(valA, valB, angleRad, labelC) {
+            s4Ctx.clearRect(0, 0, s4Canvas.width, s4Canvas.height);
+
+            const scale = 28;
+            const a_px = valA * scale;
+            const b_px = valB * scale;
+
+            const C = { x: 180, y: 220 };
+            const B = { x: C.x + b_px, y: C.y };
+            const A = {
+                x: C.x + a_px * Math.cos(Math.PI - angleRad),
+                y: C.y - a_px * Math.sin(Math.PI - angleRad)
+            };
+
+            // Cute Grid Dots
+            s4Ctx.fillStyle = "#f1f5f9";
+            for(let x = 10; x < s4Canvas.width; x += 20) {
+                for(let y = 10; y < s4Canvas.height; y += 20) {
+                    s4Ctx.beginPath();
+                    s4Ctx.arc(x, y, 1.5, 0, Math.PI * 2);
+                    s4Ctx.fill();
+                }
+            }
+
+            // Angle Arc
+            s4Ctx.beginPath();
+            s4Ctx.arc(C.x, C.y, 25, 0, -angleRad, true);
+            s4Ctx.strokeStyle = "#f59e0b";
+            s4Ctx.lineWidth = 3;
+            s4Ctx.stroke();
+
+            // Triangle Body
+            s4Ctx.beginPath();
+            s4Ctx.moveTo(C.x, C.y);
+            s4Ctx.lineTo(B.x, B.y);
+            s4Ctx.lineTo(A.x, A.y);
+            s4Ctx.closePath();
+
+            s4Ctx.fillStyle = "rgba(244, 114, 182, 0.2)";
+            s4Ctx.fill();
+            s4Ctx.strokeStyle = "#ec4899";
+            s4Ctx.lineWidth = 3.5;
+            s4Ctx.stroke();
+
+            // Vertices
+            [C, B, A].forEach((pt, idx) => {
+                s4Ctx.beginPath();
+                s4Ctx.arc(pt.x, pt.y, 6, 0, Math.PI * 2);
+                s4Ctx.fillStyle = idx === 0 ? "#f59e0b" : "#38bdf8";
+                s4Ctx.fill();
+            });
+
+            // Text Labels
+            s4Ctx.font = "bold 13px 'Zen Maru Gothic', sans-serif";
+            s4Ctx.fillStyle = "#475569";
+            s4Ctx.fillText("頂點 C", C.x - 20, C.y + 20);
+            s4Ctx.fillText(`b = ${valB}`, (C.x + B.x) / 2 - 10, C.y + 20);
+            s4Ctx.fillText(`a = ${valA}`, (C.x + A.x) / 2 - 35, (C.y + A.y) / 2);
+
+            s4Ctx.fillStyle = "#d97706";
+            s4Ctx.fillText(`c = ${labelC}`, (A.x + B.x) / 2 + 5, (A.y + B.y) / 2 - 5);
+        }
+
+        window.onload = function() {
+            lucide.createIcons();
+            initStage1Events();
+            initStage2PuzzleEvents();
+            switchStage(1);
+        };
+    </script>
+</body>
+</html>
