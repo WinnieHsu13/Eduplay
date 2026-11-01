@@ -1,0 +1,592 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>星光食荒：午餐的倒數計時</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@400;700;900&display=swap');
+        
+        body {
+            font-family: 'Noto Sans TC', sans-serif;
+            background-color: #FFFBEB; /* 暖色調餐飲背景 */
+            color: #451A03;
+            transition: background-color 0.5s, color 0.5s;
+        }
+
+        /* 菜單風格的卡片 */
+        .menu-card {
+            background-color: #FFFFFF;
+            border: 2px dashed #D97706;
+            border-radius: 12px;
+            box-shadow: 4px 4px 0px #FCD34D;
+        }
+
+        /* 紫光模式 (UV Mode) */
+        body.uv-mode {
+            background-color: #1E1B4B; /* 深紫色 */
+            color: #C7D2FE;
+        }
+        body.uv-mode .menu-card {
+            background-color: #312E81;
+            border-color: #818CF8;
+            box-shadow: 4px 4px 0px #4F46E5;
+        }
+        
+        .uv-secret {
+            display: none;
+            color: #34D399; /* 螢光綠 */
+            /* 加上一層黑色底影，讓字體邊緣銳利不模糊，再疊加發光效果 */
+            text-shadow: 0px 1px 2px rgba(0,0,0,0.9), 0 0 6px rgba(52,211,153,0.8);
+            font-weight: 900;
+            letter-spacing: 0.5px;
+        }
+        body.uv-mode .uv-secret {
+            display: block;
+        }
+        body.uv-mode .uv-secret.absolute {
+            display: flex; /* 讓收據上的絕對定位元素置中 */
+        }
+        body.uv-mode .normal-text {
+            opacity: 0.35; /* 提高原本字體的清晰度，從 0.15 改為 0.35 */
+        }
+
+        /* 紫光模式針對收據與場景的樣式調整，確保所有背景都變暗 */
+        body.uv-mode .bg-gray-200, 
+        body.uv-mode .bg-yellow-50,
+        body.uv-mode .bg-red-100 {
+            background-color: #312E81 !important;
+            border-color: #4338CA !important;
+        }
+        body.uv-mode .text-gray-500,
+        body.uv-mode .text-gray-600 {
+            color: #A5B4FC !important;
+        }
+        body.uv-mode .text-red-400,
+        body.uv-mode .text-red-600 {
+            color: #FCA5A5 !important;
+        }
+
+        body.uv-mode .receipt-card {
+            background-color: #312E81 !important;
+            border-color: #4338CA !important;
+        }
+        body.uv-mode .receipt-card .text-gray-700 {
+            color: #A5B4FC !important;
+        }
+        body.uv-mode .hint-poster {
+            background-color: #312e81 !important;
+            border-color: #4f46e5 !important;
+            color: #c7d2fe !important;
+        }
+        body.uv-mode .puzzle-box {
+            background-color: #1e1b4b !important;
+            border-color: #4f46e5 !important;
+        }
+        body.uv-mode .puzzle-box label {
+            color: #c7d2fe !important;
+        }
+        body.uv-mode .puzzle-box input {
+            background-color: #312e81 !important;
+            color: #fff !important;
+            border-color: #6366f1 !important;
+        }
+
+        /* 動畫 */
+        @keyframes shake {
+            0%, 100% { transform: translateX(0); }
+            25% { transform: translateX(-5px); }
+            75% { transform: translateX(5px); }
+        }
+        .shake {
+            animation: shake 0.3s ease-in-out;
+        }
+
+        /* 隱藏元素 */
+        .hidden-scene { display: none !important; }
+    </style>
+</head>
+<body class="min-h-screen p-4 sm:p-8 flex flex-col items-center">
+
+    <!-- 頂部狀態欄 (計時器與背包) -->
+    <div id="statusBar" class="w-full max-w-3xl flex flex-wrap justify-between items-center mb-6 menu-card p-4 hidden-scene gap-4">
+        <div class="flex items-center space-x-2">
+            <span class="text-2xl">⏳</span>
+            <span id="timerDisplay" class="text-xl font-bold text-red-600">60:00</span>
+        </div>
+        <div class="flex items-center space-x-2">
+            <span class="font-bold">🎒 背包：</span>
+            <div id="inventoryDisplay" class="text-gray-500 italic">空無一物</div>
+        </div>
+        <button id="uvToggleBtn" class="hidden bg-indigo-600 hover:bg-indigo-700 text-white px-4 py-2 rounded-full font-bold shadow-md transition transform hover:scale-105">
+            🔦 開啟紫光燈
+        </button>
+    </div>
+
+    <!-- 區域導航列 (新增) -->
+    <div id="navBar" class="w-full max-w-3xl mb-4 hidden-scene flex justify-center space-x-2 sm:space-x-4">
+        <button id="nav-btn-1" onclick="goToScene(1)" class="px-4 py-2 bg-amber-600 text-white rounded-full font-bold shadow transition">1. 用餐區</button>
+        <button id="nav-btn-2" onclick="goToScene(2)" class="px-4 py-2 bg-amber-200 text-amber-800 hover:bg-amber-300 rounded-full font-bold transition hidden-scene">2. 打菜區</button>
+        <button id="nav-btn-3" onclick="goToScene(3)" class="px-4 py-2 bg-amber-200 text-amber-800 hover:bg-amber-300 rounded-full font-bold transition hidden-scene">3. 儲藏室</button>
+    </div>
+
+    <!-- 遊戲主體容器 -->
+    <div class="w-full max-w-3xl">
+
+        <!-- 0. 首頁/開始畫面 -->
+        <div id="scene-start" class="menu-card p-8 text-center flex flex-col items-center">
+            <div class="text-6xl mb-4">🕵️‍♂️🍽️</div>
+            <h1 class="text-3xl sm:text-4xl font-black mb-4 text-amber-800">星光食荒：午餐的倒數計時</h1>
+            <p class="mb-6 leading-relaxed text-lg text-left">
+                身為「校園新聞社」的暗訪記者，你收到密報，第一學餐近期的「美食沙漠詛咒」與集體食物中毒事件，背後牽涉到餐飲經理與無良供應商的黑箱交易。<br><br>
+                距離下午一點的期中考只剩 <strong class="text-red-600">60分鐘</strong>，你必須親自潛入第一學餐，蒐集三大鐵證，揭穿這場食安黑幕！否則你和全校同學都將在考場上痛到昏倒...
+            </p>
+            <button onclick="startGame()" class="bg-amber-600 hover:bg-amber-700 text-white text-xl font-bold py-3 px-8 rounded-full shadow-lg transform transition hover:scale-105">
+                開始調查 🏃‍♂️
+            </button>
+        </div>
+
+        <!-- 1. 第一關：用餐區 (餐盤陣) -->
+        <div id="scene-1" class="hidden-scene menu-card p-6 sm:p-8">
+            <h2 class="text-2xl font-bold mb-4 border-b-2 border-amber-300 pb-2 normal-text">📍 第一關：第一學餐用餐區 (尋找受害者)</h2>
+            <p class="mb-4 normal-text">桌上散落著沒吃完的餐盤。身為記者，你需要先確認哪一桌才是真正食物中毒的「第一案發現場」。</p>
+            
+            <!-- 提示海報 -->
+            <div class="hint-poster bg-yellow-100 p-4 rounded-lg mb-6 border border-yellow-300 transform -rotate-1 shadow-sm transition-colors">
+                <span class="font-bold text-red-600">📌 靠北校園 #STU13579</span><br>
+                「昨天在第一學餐吃飯，點了招牌的<strong class="text-red-600">神秘肉排</strong>，結帳<strong class="text-red-600">剛好 85 元</strong>。結果半夜狂拉肚子！急診醫生說是食物中毒，研判是肉品保存不當，在<strong class="text-red-600">『危險溫度帶 (7℃~60℃)』</strong>放置過久導致細菌大量孳生！大家千萬別吃！」
+            </div>
+
+            <p class="font-bold mb-2 normal-text text-amber-900">🔍 調查桌上的剩食與收據。請找出符合貼文金額與菜色，且食物正處於<strong class="text-red-600">『危險溫度帶』</strong>的案發現場：</p>
+            <div class="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-6">
+                <!-- Receipt A -->
+                <div class="receipt-card bg-gray-50 p-4 rounded border-2 border-gray-300 transition relative overflow-hidden flex flex-col justify-between">
+                    <div class="normal-text transition-opacity duration-300">
+                        <div class="font-mono text-sm border-b border-gray-300 pb-1 mb-2">單號：#102 (A桌)</div>
+                        <ul class="text-sm space-y-1"><li>炸雞腿 ($50)</li><li>高麗菜 ($20)</li><li>白飯 ($15)</li></ul>
+                        <div class="mt-2 text-right font-bold text-gray-700 mb-2">Total: $85</div>
+                        <button onclick="measureTemp('A')" class="w-full p-2 bg-indigo-50 hover:bg-indigo-100 text-indigo-700 border border-indigo-200 rounded text-sm font-bold transition">🌡️ 測量食物溫度</button>
+                        <div id="temp-result-A" class="hidden mt-2 text-sm bg-white p-2 rounded border border-gray-200"></div>
+                    </div>
+                    <button onclick="checkReceipt('A')" class="mt-4 bg-amber-600 hover:bg-amber-700 text-white py-2 px-4 rounded text-sm w-full font-bold shadow transition relative z-20">鎖定此桌為案發現場</button>
+                    <!-- 干擾用螢光污漬 -->
+                    <div class="uv-secret absolute inset-0 z-10 items-center justify-center p-2 text-center pointer-events-none">
+                        <span class="text-emerald-400/30 text-5xl transform -rotate-12 blur-[1px]">🐾</span>
+                    </div>
+                </div>
+
+                <!-- Receipt B -->
+                <div class="receipt-card bg-gray-50 p-4 rounded border-2 border-gray-300 transition relative overflow-hidden flex flex-col justify-between">
+                    <div class="normal-text transition-opacity duration-300">
+                        <div class="font-mono text-sm border-b border-gray-300 pb-1 mb-2">單號：#414 (B桌)</div>
+                        <ul class="text-sm space-y-1"><li>神秘肉排 ($55)</li><li>螢光咖哩 ($30)</li></ul>
+                        <div class="mt-2 text-right font-bold text-gray-700 mb-2">Total: $85</div>
+                        <button onclick="measureTemp('B')" class="w-full p-2 bg-indigo-50 hover:bg-indigo-100 text-indigo-700 border border-indigo-200 rounded text-sm font-bold transition">🌡️ 測量食物溫度</button>
+                        <div id="temp-result-B" class="hidden mt-2 text-sm bg-white p-2 rounded border border-gray-200"></div>
+                    </div>
+                    <button onclick="checkReceipt('B')" class="mt-4 bg-amber-600 hover:bg-amber-700 text-white py-2 px-4 rounded text-sm w-full font-bold shadow transition relative z-20">鎖定此桌為案發現場</button>
+                    <!-- 跨關卡隱藏線索 -->
+                    <div class="uv-secret absolute inset-0 z-10 items-center justify-center p-2 text-center pointer-events-none">
+                        <div class="border-2 border-dashed border-emerald-400/80 p-2 rounded transform rotate-12 bg-indigo-900/60 backdrop-blur-[1px] shadow-[0_0_10px_rgba(52,211,153,0.3)]">
+                            <span class="text-emerald-300 font-black text-xl tracking-widest block drop-shadow-md">密碼:0928</span>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Receipt C -->
+                <div class="receipt-card bg-gray-50 p-4 rounded border-2 border-gray-300 transition relative overflow-hidden flex flex-col justify-between">
+                    <div class="normal-text transition-opacity duration-300">
+                        <div class="font-mono text-sm border-b border-gray-300 pb-1 mb-2">單號：#256 (C桌)</div>
+                        <ul class="text-sm space-y-1"><li>控肉 ($45)</li><li>筍絲 ($20)</li><li>白飯 ($20)</li></ul>
+                        <div class="mt-2 text-right font-bold text-gray-700 mb-2">Total: $85</div>
+                        <button onclick="measureTemp('C')" class="w-full p-2 bg-indigo-50 hover:bg-indigo-100 text-indigo-700 border border-indigo-200 rounded text-sm font-bold transition">🌡️ 測量食物溫度</button>
+                        <div id="temp-result-C" class="hidden mt-2 text-sm bg-white p-2 rounded border border-gray-200"></div>
+                    </div>
+                    <button onclick="checkReceipt('C')" class="mt-4 bg-amber-600 hover:bg-amber-700 text-white py-2 px-4 rounded text-sm w-full font-bold shadow transition relative z-20">鎖定此桌為案發現場</button>
+                    <!-- 干擾用螢光印記 -->
+                    <div class="uv-secret absolute inset-0 z-10 items-center justify-center p-2 text-center pointer-events-none">
+                        <span class="text-emerald-400/30 text-lg font-bold transform rotate-6 border border-emerald-400/30 p-1 rounded">已結帳</span>
+                    </div>
+                </div>
+
+                <!-- Receipt D -->
+                <div class="receipt-card bg-gray-50 p-4 rounded border-2 border-gray-300 transition relative overflow-hidden flex flex-col justify-between">
+                    <div class="normal-text transition-opacity duration-300">
+                        <div class="font-mono text-sm border-b border-gray-300 pb-1 mb-2">單號：#398 (D桌)</div>
+                        <ul class="text-sm space-y-1"><li>神秘肉排 ($55)</li><li>貢丸湯 ($25)</li></ul>
+                        <div class="mt-2 text-right font-bold text-gray-700 mb-2">Total: $80</div>
+                        <button onclick="measureTemp('D')" class="w-full p-2 bg-indigo-50 hover:bg-indigo-100 text-indigo-700 border border-indigo-200 rounded text-sm font-bold transition">🌡️ 測量食物溫度</button>
+                        <div id="temp-result-D" class="hidden mt-2 text-sm bg-white p-2 rounded border border-gray-200"></div>
+                    </div>
+                    <button onclick="checkReceipt('D')" class="mt-4 bg-amber-600 hover:bg-amber-700 text-white py-2 px-4 rounded text-sm w-full font-bold shadow transition relative z-20">鎖定此桌為案發現場</button>
+                    <!-- 干擾用螢光污漬 -->
+                    <div class="uv-secret absolute inset-0 z-10 items-center justify-center p-2 text-center pointer-events-none">
+                        <span class="text-emerald-400/40 text-6xl transform rotate-45 blur-[2px]">💦</span>
+                    </div>
+                </div>
+            </div>
+
+            <div class="puzzle-box mt-8 p-4 bg-amber-50 rounded-lg border border-amber-200 flex flex-col items-center shadow-inner transition-colors">
+                <label class="font-bold mb-2 text-amber-900">🔒 通往打菜區的密碼鎖 (請輸入受害者的3位數收據單號)</label>
+                <div class="flex space-x-2">
+                    <input type="text" id="pwd-scene1" maxlength="3" class="border-2 border-amber-400 rounded px-3 py-2 text-center text-xl w-32 focus:outline-none focus:border-amber-600 bg-white transition-colors" placeholder="***">
+                    <button onclick="unlockScene1()" class="bg-amber-600 hover:bg-amber-700 text-white font-bold py-2 px-6 rounded transition shadow-md">解鎖</button>
+                </div>
+            </div>
+        </div>
+
+        <!-- 2. 第二關：打菜區 (霞姐與暗門) -->
+        <div id="scene-2" class="hidden-scene menu-card p-6 sm:p-8">
+            <h2 class="text-2xl font-bold mb-4 border-b-2 border-amber-300 pb-2">📍 第二關：打菜區與暗門密碼</h2>
+            
+            <div class="flex flex-col sm:flex-row gap-6 mb-6">
+                <!-- NPC 互動區 -->
+                <div class="flex-1 bg-orange-50 p-4 rounded-lg border border-orange-200 shadow-inner">
+                    <div class="flex items-center space-x-4 mb-4">
+                        <div class="text-5xl">👩‍🍳</div>
+                        <div>
+                            <h3 class="font-bold text-lg">打飯阿姨「霞姐」</h3>
+                            <p class="text-sm text-gray-600 normal-text">神情緊張，似乎知道內情，但礙於經理威脅不敢直說。</p>
+                        </div>
+                    </div>
+                    <div id="npc-dialogue-box" class="mb-4 italic text-amber-900 bg-white p-3 rounded shadow-sm border border-orange-100">
+                        「哎呀！你們不要亂講話！菜都是經理叫進來的，我什麼都不知道！快走快走！」
+                    </div>
+                    <div class="flex flex-col space-y-2" id="npc-options">
+                        <button onclick="talkToNPC('bad')" class="bg-red-100 hover:bg-red-200 text-red-800 text-left px-3 py-2 rounded text-sm font-bold transition">
+                            🗣️ (威脅)「我都查到有人中毒了！妳再包庇經理，我就報警抓妳！」
+                        </button>
+                        <button onclick="talkToNPC('good')" class="bg-blue-100 hover:bg-blue-200 text-blue-800 text-left px-3 py-2 rounded text-sm font-bold transition">
+                            🗣️ (動之以情)「霞姐，妳以前都會偷偷多給我們雞塊。那個經理是不是逼妳用壞掉的東西？我們需要證據保護妳！」
+                        </button>
+                    </div>
+                </div>
+
+                <!-- 謎題區 -->
+                <div class="flex-1 bg-amber-100 p-4 rounded-lg border border-amber-300 shadow-inner relative">
+                    <h3 class="font-bold mb-2">📜 菜單與詭異的打油詩</h3>
+                    <!-- 菜單 -->
+                    <div class="bg-white p-2 rounded border border-gray-300 mb-3 grid grid-cols-2 gap-2 text-sm font-bold text-gray-700">
+                        <div>🥩 紅燒肉：$60</div>
+                        <div>🥬 小白菜：$25</div>
+                        <div>🥚 滷蛋：$10</div>
+                        <div>🍛 咖哩：$40</div>
+                    </div>
+                    <!-- 打油詩 -->
+                    <p class="italic text-red-700 mb-2 font-serif font-bold text-lg">「想入暗門聽我勸：<br>紅燒去尾留開頭，<br>白菜加蛋算一籌，<br>最後補上咖哩尾，<br>四碼齊全門就開。」</p>
+                    <p class="text-xs text-gray-600 mt-2">👉 提示：將菜色對應價格，依照詩句邏輯運算，得出一組四位數密碼。</p>
+                </div>
+            </div>
+
+            <div class="mt-4 p-4 bg-amber-50 rounded-lg border border-amber-200 flex flex-col items-center">
+                <label class="font-bold mb-2">🚪 儲藏室暗門密碼鎖 (解開打油詩的4位數字)</label>
+                <div class="flex space-x-2">
+                    <input type="text" id="pwd-scene2" maxlength="4" class="border-2 border-amber-400 rounded px-3 py-2 text-center text-xl w-32 focus:outline-none focus:border-amber-600 bg-white" placeholder="****">
+                    <button onclick="unlockScene2()" class="bg-amber-600 hover:bg-amber-700 text-white font-bold py-2 px-6 rounded transition shadow-md">進入儲藏室</button>
+                </div>
+            </div>
+        </div>
+
+        <!-- 3. 第三關：儲藏室 (食安查緝 SDG 3) -->
+        <div id="scene-3" class="hidden-scene menu-card p-6 sm:p-8 transition-colors">
+            <h2 class="text-2xl font-bold mb-2 border-b-2 border-indigo-400 pb-2 normal-text">📍 第三關：黑暗儲藏室 (跨區搜查)</h2>
+            <p class="mb-4 normal-text text-sm">這裡堆滿了紙箱，光線昏暗。你需要先從霞姐那邊取得「紫光手電筒」才能發現隱藏的黑心證據！</p>
+
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
+                <!-- 食材區 -->
+                <div class="space-y-4">
+                    <div class="bg-gray-200 p-4 rounded border-2 border-gray-400 relative overflow-hidden transition-colors">
+                        <span class="font-bold normal-text">📦 桶裝大豆油</span>
+                        <div class="normal-text text-sm mt-1">外觀看起來很正常。</div>
+                        <div class="uv-secret mt-2">↳ ⚠️ 檢驗試紙顯影：酸價(Acid Value)嚴重超標！這是反覆油炸多次的「萬年回鍋油」，極易產生致癌物質！</div>
+                    </div>
+                    
+                    <div class="bg-gray-200 p-4 rounded border-2 border-gray-400 relative overflow-hidden transition-colors">
+                        <span class="font-bold normal-text">📦 學餐專用冷凍肉餅</span>
+                        <div class="normal-text text-sm mt-1">製造商：優質農產 (標示符合CAS認證)</div>
+                        <div class="uv-secret mt-2">↳ ⚠️ 螢光漆覆蓋：真實供應商為「黑心生技」！且運送過程未落實「冷鏈(Cold Chain)」管理，曾在室溫下曝曬，導致沙門氏菌嚴重超標！</div>
+                    </div>
+
+                    <div class="bg-gray-200 p-4 rounded border-2 border-gray-400 relative overflow-hidden transition-colors border-dashed border-indigo-300">
+                        <span class="font-bold normal-text">📝 經理的備忘錄 (碎紙片)</span>
+                        <div class="normal-text text-sm mt-1 text-gray-500">上面什麼都沒寫...</div>
+                        <div class="uv-secret mt-2">↳ 紫外線顯影：「最終定罪的證據鎖在保險箱裡！<br>保險箱密碼我偷偷寫在<strong class="text-red-400">昨天那張中毒學生的收據 (單號 #414) 背面</strong>了，用紫光燈才看得到！」</div>
+                    </div>
+                </div>
+
+                <!-- 佈告欄 -->
+                <div class="bg-yellow-50 p-4 rounded shadow-inner border border-yellow-200 transition-colors flex flex-col justify-center items-center text-center">
+                    <h3 class="font-bold mb-4 normal-text text-xl">🧊 經理專用冷藏保險箱</h3>
+                    <p class="normal-text text-sm mb-4 text-gray-600">裡面存放著經理與黑心生技勾結的「真實進貨帳本」。若能拿到這個，就能向衛生局舉發！</p>
+                    <div class="p-3 bg-red-100 border border-red-300 rounded uv-secret text-sm text-red-600 font-bold mb-4 w-full">
+                        ⚠️ 提示：請利用上方的【導航列】回到第一關，打開紫光燈查看那張關鍵收據！
+                    </div>
+                </div>
+            </div>
+
+            <div class="mt-4 p-4 bg-indigo-900 rounded-lg border border-indigo-500 flex flex-col items-center shadow-xl">
+                <label class="font-bold mb-2 text-white">🔐 保險箱最終密碼鎖 (請輸入收據背面的4碼數字)</label>
+                <div class="flex space-x-2">
+                    <input type="text" id="pwd-scene3" maxlength="4" class="border-2 border-indigo-400 rounded px-3 py-2 text-center text-xl w-32 bg-indigo-800 text-white placeholder-indigo-400 focus:outline-none focus:border-indigo-300" placeholder="****">
+                    <button onclick="unlockScene3()" class="bg-green-500 hover:bg-green-600 text-white font-bold py-2 px-8 rounded transition shadow-lg transform hover:scale-105">揭發真相！</button>
+                </div>
+            </div>
+        </div>
+
+        <!-- 4. 結局 -->
+        <div id="scene-end" class="hidden-scene menu-card p-8 text-center flex flex-col items-center bg-green-50 border-green-500">
+            <div class="text-6xl mb-4">🏆</div>
+            <h1 class="text-3xl font-black mb-4 text-green-700">成功打破結界！揭穿食安黑幕！</h1>
+            <p class="mb-4 leading-relaxed text-lg text-left">
+                冷藏庫大門轟然開啟，你找到了「真實進貨帳本」！<br>
+                黑心經理因違反食品安全衛生管理法被依法查辦，第一學餐終於恢復了健康與美味。<br><br>
+                🎓 <strong>【食安知識與 SDG 3 良好健康與福祉】</strong><br>
+                你成功揪出了<strong class="text-red-600">忽視危險溫度帶、打破先進先出原則、生熟食交叉污染</strong>以及<strong class="text-red-600">未落實冷鏈運輸</strong>的食安大漏洞！確保所有學生都能獲得安全、營養的餐點。<br>
+                帶著剛吃飽的「健康特餐」，你充滿能量地前往期中考考場！
+            </p>
+            <div class="text-xl font-bold text-blue-600 mb-6">剩餘時間：<span id="finalTime"></span></div>
+            <button onclick="location.reload()" class="bg-green-600 hover:bg-green-700 text-white font-bold py-2 px-6 rounded-full shadow transition transform hover:scale-105">
+                再玩一次
+            </button>
+        </div>
+
+        <!-- 失敗結局 -->
+        <div id="scene-gameover" class="hidden-scene menu-card p-8 text-center flex flex-col items-center bg-gray-200 border-gray-500">
+            <div class="text-6xl mb-4">💀</div>
+            <h1 class="text-3xl font-black mb-4 text-gray-800">時間到，考場昏迷！</h1>
+            <p class="mb-6 leading-relaxed">
+                你未能及時找出學餐食安危機的真相，在極度飢餓與腸胃劇痛的雙重打擊下，你在期中考考卷上流下了悔恨的口水，慘遭死當...
+            </p>
+            <button onclick="location.reload()" class="bg-gray-600 hover:bg-gray-700 text-white font-bold py-2 px-6 rounded-full shadow transition">
+                重新挑戰
+            </button>
+        </div>
+
+    </div>
+
+    <!-- 客製化對話框 (取代 alert) -->
+    <div id="customModal" class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center hidden-scene z-50">
+        <div class="bg-white rounded-lg p-6 max-w-sm w-full mx-4 shadow-2xl transform transition-all">
+            <h3 id="modalTitle" class="text-xl font-bold mb-2 text-amber-800">提示</h3>
+            <p id="modalText" class="mb-6 text-gray-700">這裡是一段訊息。</p>
+            <div class="text-right">
+                <button onclick="closeModal()" class="bg-amber-500 hover:bg-amber-600 text-white font-bold py-2 px-6 rounded focus:outline-none transition">確定</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // 遊戲狀態
+        let timeRemaining = 3600; // 60 minutes in seconds
+        let timerInterval;
+        let inventory = [];
+        let hasTalkedToNPC = false;
+        let maxUnlocked = 1; // 記錄最高解鎖關卡
+
+        // 關卡切換邏輯
+        function goToScene(n) {
+            if (n > maxUnlocked) return;
+            
+            // 隱藏所有關卡
+            document.getElementById('scene-1').classList.add('hidden-scene');
+            document.getElementById('scene-2').classList.add('hidden-scene');
+            document.getElementById('scene-3').classList.add('hidden-scene');
+            
+            // 顯示目標關卡
+            document.getElementById('scene-' + n).classList.remove('hidden-scene');
+            
+            // 更新導航列按鈕樣式
+            for(let i=1; i<=3; i++) {
+                let btn = document.getElementById('nav-btn-' + i);
+                if (!btn) continue;
+                if (i > maxUnlocked) {
+                    btn.classList.add('hidden-scene');
+                } else {
+                    btn.classList.remove('hidden-scene');
+                    if (i === n) {
+                        btn.className = "px-4 py-2 bg-amber-600 text-white rounded-full font-bold shadow transition";
+                    } else {
+                        btn.className = "px-4 py-2 bg-amber-200 text-amber-800 hover:bg-amber-300 rounded-full font-bold transition";
+                    }
+                }
+            }
+        }
+
+        // 更新背包顯示
+        function updateInventoryDisplay() {
+            const display = document.getElementById('inventoryDisplay');
+            if (inventory.length === 0) {
+                display.innerHTML = '空無一物';
+                display.className = 'text-gray-500 italic';
+            } else {
+                let itemsHTML = [];
+                if (inventory.includes('receipt')) itemsHTML.push('<span class="bg-gray-200 px-2 py-1 rounded text-sm shadow-sm">📜 毒餐盤收據</span>');
+                if (inventory.includes('uv')) itemsHTML.push('<span class="bg-indigo-100 text-indigo-800 px-2 py-1 rounded text-sm shadow-sm font-bold border border-indigo-300">🔦 紫光手電筒</span>');
+                display.innerHTML = itemsHTML.join(' ');
+                display.className = 'flex space-x-2';
+            }
+        }
+        
+        // 啟動遊戲
+        function startGame() {
+            document.getElementById('scene-start').classList.add('hidden-scene');
+            document.getElementById('statusBar').classList.remove('hidden-scene');
+            document.getElementById('navBar').classList.remove('hidden-scene');
+            
+            goToScene(1); // 初始化進入第一關
+            
+            timerInterval = setInterval(() => {
+                timeRemaining--;
+                updateTimerDisplay();
+                if (timeRemaining <= 0) {
+                    gameOver();
+                }
+            }, 1000);
+        }
+
+        // 更新計時器
+        function updateTimerDisplay() {
+            let m = Math.floor(timeRemaining / 60).toString().padStart(2, '0');
+            let s = (timeRemaining % 60).toString().padStart(2, '0');
+            document.getElementById('timerDisplay').innerText = `${m}:${s}`;
+        }
+
+        // 客製化對話框
+        function showModal(title, text) {
+            document.getElementById('modalTitle').innerText = title;
+            document.getElementById('modalText').innerHTML = text;
+            document.getElementById('customModal').classList.remove('hidden-scene');
+        }
+        function closeModal() {
+            document.getElementById('customModal').classList.add('hidden-scene');
+        }
+
+        // 輸入錯誤震動動畫
+        function triggerShake(elementId) {
+            const el = document.getElementById(elementId);
+            el.classList.add('shake', 'border-red-500');
+            setTimeout(() => el.classList.remove('shake', 'border-red-500'), 300);
+        }
+
+        // --- 第一關邏輯 ---
+        function measureTemp(table) {
+            const temps = {
+                'A': { temp: '65℃', desc: '高於60℃，熱存良好，不易滋生細菌。', color: 'text-green-600' },
+                'B': { temp: '32℃', desc: '落於危險溫度帶！正是病原菌快速繁殖的溫床。', color: 'text-red-600' },
+                'C': { temp: '4℃', desc: '低於7℃，冷藏保存良好，細菌活動力低。', color: 'text-green-600' },
+                'D': { temp: '28℃', desc: '落於危險溫度帶！這也是食安破口。', color: 'text-orange-600' }
+            };
+            
+            const resultDiv = document.getElementById(`temp-result-${table}`);
+            resultDiv.innerHTML = `<span class="font-bold ${temps[table].color}">檢測結果：${temps[table].temp}</span><br><span class="text-gray-600">${temps[table].desc}</span>`;
+            resultDiv.classList.remove('hidden');
+        }
+
+        function checkReceipt(type) {
+            if (type === 'B') {
+                showModal('推理正確！', '這桌不僅點了「神秘肉排」且金額剛好「85元」，更關鍵的是食物中心溫度為 <strong class="text-red-600">32℃</strong>，完全處於 <strong class="text-red-600">7℃~60℃ 的危險溫度帶</strong>，這絕對是細菌大量滋生導致中毒的元凶！<br><br>這張 <strong>單號 #414</strong> 的收據就是鐵證，你將它收進了背包。<br><br><span class="text-sm text-gray-500">(已將線索【毒餐盤收據】放入背包)</span>');
+                if (!inventory.includes('receipt')) {
+                    inventory.push('receipt');
+                    updateInventoryDisplay();
+                }
+            } else if (type === 'A') {
+                showModal('推理錯誤', '這桌金額雖然相符，但菜色不對。而且食物保存在安全的 65℃，不會是食物中毒的元凶。');
+            } else if (type === 'C') {
+                showModal('推理錯誤', '這桌金額雖然是 85 元，但菜色不符。且溫度 4℃ 屬於安全冷藏範圍，不會快速滋生細菌。再仔細看看貼文條件吧！');
+            } else {
+                showModal('推理錯誤', '這桌的食物確實落入了危險溫度帶，但金額與菜色跟受害者的貼文描述不符，不是我們要找的目標。');
+            }
+        }
+        
+        function unlockScene1() {
+            const pwd = document.getElementById('pwd-scene1').value;
+            if (pwd === '414') {
+                if (maxUnlocked < 2) maxUnlocked = 2;
+                goToScene(2);
+                showModal('解鎖成功', '閘門開啟，你成功潛入打菜區。<br><br><span class="text-sm text-gray-600">(提示：你可以隨時點擊上方的【區域導航按鈕】返回用餐區查看線索)</span>');
+            } else {
+                triggerShake('pwd-scene1');
+            }
+        }
+
+        // --- 第二關邏輯 ---
+        function talkToNPC(type) {
+            if(hasTalkedToNPC && type === 'good') return; 
+
+            const box = document.getElementById('npc-dialogue-box');
+            if (type === 'bad') {
+                box.innerHTML = '霞姐嚇得大叫：「我什麼都不知道！不要逼我！」<br><strong class="text-red-600">⚠️ 霞姐躲進後台，驚動了巡邏警衛，你只好躲起來浪費了時間！(扣 1 分鐘)</strong>';
+                timeRemaining = Math.max(0, timeRemaining - 60);
+                updateTimerDisplay();
+                triggerShake('timerDisplay');
+            } else if (type === 'good') {
+                box.innerHTML = '霞姐眼眶微紅：「唉，經理為了省錢，不僅打破『先進先出(FIFO)』的食材管理原則，還逼我們把生肉跟熟食放在同一個砧板上切，這可是嚴重的『交叉污染』啊！我真的受不了了...這把我平常驗標籤用的紫光燈借你，你解開門鎖去儲藏室，用它照一照就知道有多黑心了...」<br><strong class="text-blue-600">✨ 獲得關鍵道具：【紫光手電筒】！</strong>';
+                if (!inventory.includes('uv')) {
+                    inventory.push('uv');
+                    updateInventoryDisplay();
+                    document.getElementById('uvToggleBtn').classList.remove('hidden');
+                    hasTalkedToNPC = true;
+                }
+            }
+        }
+
+        function unlockScene2() {
+            const pwd = document.getElementById('pwd-scene2').value;
+            // 密碼邏輯：紅燒(60)去尾留頭=6, 白菜(25)+蛋(10)=35, 咖哩(40)尾數=0 -> 6350
+            if (pwd === '6350') {
+                if (maxUnlocked < 3) maxUnlocked = 3;
+                goToScene(3);
+                showModal('進入儲藏室', '厚重的暗門開啟，裡面一片漆黑。<br><br>💡 <strong>系統提示：</strong>現在必須依賴「紫光燈」才能看見隱藏的線索了！');
+            } else {
+                triggerShake('pwd-scene2');
+            }
+        }
+
+        // --- 第三關邏輯 (跨區 UV 手電筒) ---
+        document.getElementById('uvToggleBtn').addEventListener('click', function() {
+            document.body.classList.toggle('uv-mode');
+            if (document.body.classList.contains('uv-mode')) {
+                this.innerHTML = '🔦 關閉紫光燈';
+                this.classList.replace('bg-indigo-600', 'bg-gray-600');
+                this.classList.replace('hover:bg-indigo-700', 'hover:bg-gray-700');
+            } else {
+                this.innerHTML = '🔦 開啟紫光燈';
+                this.classList.replace('bg-gray-600', 'bg-indigo-600');
+                this.classList.replace('hover:bg-gray-700', 'hover:bg-indigo-700');
+            }
+        });
+
+        function unlockScene3() {
+            const pwd = document.getElementById('pwd-scene3').value;
+            // 密碼來自 Scene 1 收據B的 UV 隱藏文字：0928
+            if (pwd === '0928') {
+                clearInterval(timerInterval);
+                document.getElementById('scene-3').classList.add('hidden-scene');
+                document.getElementById('statusBar').classList.add('hidden-scene');
+                document.getElementById('navBar').classList.add('hidden-scene');
+                document.getElementById('scene-end').classList.remove('hidden-scene');
+                document.body.classList.remove('uv-mode');
+                
+                let m = Math.floor(timeRemaining / 60).toString().padStart(2, '0');
+                let s = (timeRemaining % 60).toString().padStart(2, '0');
+                document.getElementById('finalTime').innerText = `${m}:${s}`;
+            } else {
+                triggerShake('pwd-scene3');
+            }
+        }
+
+        // --- 失敗邏輯 ---
+        function gameOver() {
+            clearInterval(timerInterval);
+            document.getElementById('scene-1').classList.add('hidden-scene');
+            document.getElementById('scene-2').classList.add('hidden-scene');
+            document.getElementById('scene-3').classList.add('hidden-scene');
+            document.getElementById('statusBar').classList.add('hidden-scene');
+            document.getElementById('navBar').classList.add('hidden-scene');
+            document.body.classList.remove('uv-mode');
+            document.getElementById('scene-gameover').classList.remove('hidden-scene');
+        }
+    </script>
+</body>
+</html>

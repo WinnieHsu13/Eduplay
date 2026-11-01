@@ -1,0 +1,905 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>跨域解謎：大學 AI 跨域學程救星</title>
+    <!-- Tailwind CSS CDN -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        brand: {
+                            50: '#eff6ff',
+                            100: '#dbeafe',
+                            500: '#3b82f6',
+                            600: '#2563eb',
+                            700: '#1d4ed8',
+                            900: '#1e3a8a'
+                        }
+                    },
+                    fontFamily: {
+                        sans: ['Inter', 'system-ui', '-apple-system', 'BlinkMacSystemFont', 'Segoe UI', 'Roboto', 'sans-serif']
+                    }
+                }
+            }
+        }
+    </script>
+    <!-- FontAwesome Icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <!-- Canvas Confetti -->
+    <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.6.0/dist/confetti.browser.min.js"></script>
+    <style>
+        body {
+            background-color: #f8fafc;
+            color: #0f172a;
+        }
+        .soft-card {
+            background: #ffffff;
+            border: 1px solid #e2e8f0;
+            box-shadow: 0 4px 12px -2px rgba(0, 0, 0, 0.05), 0 2px 6px -1px rgba(0, 0, 0, 0.02);
+            border-radius: 1rem;
+        }
+        .card-hover {
+            transition: all 0.2s ease-in-out;
+        }
+        .card-hover:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 12px 24px -4px rgba(37, 99, 235, 0.12), 0 4px 8px -2px rgba(0, 0, 0, 0.04);
+            border-color: #93c5fd;
+        }
+        /* Custom scrollbar */
+        ::-webkit-scrollbar { width: 6px; height: 6px; }
+        ::-webkit-scrollbar-track { background: #f1f5f9; }
+        ::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 4px; }
+        ::-webkit-scrollbar-thumb:hover { background: #94a3b8; }
+    </style>
+</head>
+<body class="min-h-screen flex flex-col font-sans selection:bg-brand-500 selection:text-white">
+
+    <!-- Web Audio Sound FX -->
+    <script>
+        class SoundFX {
+            constructor() { this.ctx = null; }
+            init() {
+                if (!this.ctx) {
+                    this.ctx = new (window.AudioContext || window.webkitAudioContext)();
+                }
+            }
+            playTone(freq, type = 'sine', duration = 0.12, vol = 0.08) {
+                if (!this.ctx) return;
+                try {
+                    const osc = this.ctx.createOscillator();
+                    const gain = this.ctx.createGain();
+                    osc.type = type;
+                    osc.frequency.setValueAtTime(freq, this.ctx.currentTime);
+                    gain.gain.setValueAtTime(vol, this.ctx.currentTime);
+                    gain.gain.exponentialRampToValueAtTime(0.001, this.ctx.currentTime + duration);
+                    osc.connect(gain);
+                    gain.connect(this.ctx.destination);
+                    osc.start();
+                    osc.stop(this.ctx.currentTime + duration);
+                } catch(e) {}
+            }
+            click() { this.playTone(580, 'sine', 0.06, 0.05); }
+            success() { 
+                this.playTone(523.25, 'triangle', 0.1, 0.08);
+                setTimeout(() => this.playTone(659.25, 'triangle', 0.12, 0.08), 70);
+                setTimeout(() => this.playTone(783.99, 'triangle', 0.18, 0.08), 140);
+            }
+            alert() {
+                this.playTone(240, 'sawtooth', 0.12, 0.08);
+                setTimeout(() => this.playTone(190, 'sawtooth', 0.15, 0.08), 90);
+            }
+        }
+        const soundFx = new SoundFX();
+        document.addEventListener('click', () => soundFx.init(), { once: true });
+    </script>
+
+    <!-- Header & Target Audience Navigation -->
+    <header class="bg-white border-b border-slate-200 sticky top-0 z-40 shadow-sm px-4 py-3">
+        <div class="max-w-7xl mx-auto flex flex-col md:flex-row md:items-center justify-between gap-3">
+            <div class="flex items-center gap-3">
+                <div class="p-2.5 bg-brand-50 border border-brand-100 rounded-xl text-brand-600 shadow-sm">
+                    <i class="fa-solid fa-graduation-cap text-xl"></i>
+                </div>
+                <div>
+                    <div class="flex items-center gap-2">
+                        <h1 class="font-extrabold text-slate-900 text-lg md:text-xl tracking-tight">跨域解謎：大學 AI 跨域學程救星</h1>
+                        <span class="px-2 py-0.5 bg-brand-100 text-brand-700 text-xs font-bold rounded-full">高教策略模擬</span>
+                    </div>
+                    <p class="text-xs text-slate-500 font-medium">針對「CS 搶甜課 vs 非 CS 害怕 GPA 停損」核心痛點的解謎策略遊戲</p>
+                </div>
+            </div>
+
+            <!-- Target Audience Notification Box -->
+            <div class="bg-amber-50 border border-amber-200/80 rounded-xl p-2.5 flex items-start gap-2 text-xs text-amber-900 max-w-xl">
+                <i class="fa-solid fa-circle-info text-amber-600 mt-0.5 text-sm flex-shrink-0"></i>
+                <div>
+                    <span class="font-bold text-amber-950 block">🎮 本遊戲適合操作對象：</span>
+                    <span class="text-amber-800 leading-tight">大學教務長、跨域學程主持人、開設 AI+X 課程的教授、教學發展中心人員，以及關注教育改革的師生體驗與決策模擬。</span>
+                </div>
+            </div>
+        </div>
+    </header>
+
+    <!-- Main Workspace -->
+    <main class="max-w-7xl mx-auto w-full p-4 md:p-6 flex-1 flex flex-col gap-6">
+
+        <!-- Metrics KPI Dashboard -->
+        <section class="grid grid-cols-2 md:grid-cols-4 gap-4">
+            <!-- CS Satisfaction -->
+            <div class="soft-card p-4 border-t-4 border-t-indigo-600 flex flex-col justify-between">
+                <div class="flex items-center justify-between mb-1.5">
+                    <span class="text-xs font-bold text-slate-500 flex items-center gap-1.5">
+                        <i class="fa-solid fa-code text-indigo-600"></i> CS 挑戰/滿意度
+                    </span>
+                    <span id="val-cs" class="text-base font-extrabold text-indigo-600">45%</span>
+                </div>
+                <div class="w-full bg-slate-100 h-2.5 rounded-full overflow-hidden p-0.5 border border-slate-200 mb-2">
+                    <div id="bar-cs" class="bg-indigo-600 h-full rounded-full transition-all duration-500" style="width: 45%;"></div>
+                </div>
+                <p id="desc-cs" class="text-[11px] text-slate-600 leading-tight font-medium truncate">抱怨內容太淺像營養甜課</p>
+            </div>
+
+            <!-- Non-CS Confidence -->
+            <div class="soft-card p-4 border-t-4 border-t-amber-500 flex flex-col justify-between">
+                <div class="flex items-center justify-between mb-1.5">
+                    <span class="text-xs font-bold text-slate-500 flex items-center gap-1.5">
+                        <i class="fa-solid fa-shield-heart text-amber-500"></i> 非 CS 信心/GPA安全感
+                    </span>
+                    <span id="val-noncs" class="text-base font-extrabold text-amber-600">40%</span>
+                </div>
+                <div class="w-full bg-slate-100 h-2.5 rounded-full overflow-hidden p-0.5 border border-slate-200 mb-2">
+                    <div id="bar-noncs" class="bg-amber-500 h-full rounded-full transition-all duration-500" style="width: 40%;"></div>
+                </div>
+                <p id="desc-noncs" class="text-[11px] text-slate-600 leading-tight font-medium truncate">焦慮：害怕 Python 拖累 GPA</p>
+            </div>
+
+            <!-- Retention Rate -->
+            <div class="soft-card p-4 border-t-4 border-t-emerald-600 flex flex-col justify-between">
+                <div class="flex items-center justify-between mb-1.5">
+                    <span class="text-xs font-bold text-slate-500 flex items-center gap-1.5">
+                        <i class="fa-solid fa-arrow-trend-up text-emerald-600"></i> 二年級續修率 %
+                    </span>
+                    <span id="val-retention" class="text-base font-extrabold text-emerald-600">25%</span>
+                </div>
+                <div class="w-full bg-slate-100 h-2.5 rounded-full overflow-hidden p-0.5 border border-slate-200 mb-2">
+                    <div id="bar-retention" class="bg-emerald-600 h-full rounded-full transition-all duration-500" style="width: 25%;"></div>
+                </div>
+                <p id="desc-retention" class="text-[11px] text-slate-600 leading-tight font-medium truncate">警訊：第一年後多數人停損</p>
+            </div>
+
+            <!-- Program Innovation -->
+            <div class="soft-card p-4 border-t-4 border-t-blue-600 flex flex-col justify-between">
+                <div class="flex items-center justify-between mb-1.5">
+                    <span class="text-xs font-bold text-slate-500 flex items-center gap-1.5">
+                        <i class="fa-solid fa-lightbulb text-blue-600"></i> 專題落地與創新分
+                    </span>
+                    <span id="val-innovation" class="text-base font-extrabold text-blue-600">35</span>
+                </div>
+                <div class="w-full bg-slate-100 h-2.5 rounded-full overflow-hidden p-0.5 border border-slate-200 mb-2">
+                    <div id="bar-innovation" class="bg-blue-600 h-full rounded-full transition-all duration-500" style="width: 35%;"></div>
+                </div>
+                <p id="desc-innovation" class="text-[11px] text-slate-600 leading-tight font-medium truncate">缺乏實用價值的跨域專題作品</p>
+            </div>
+        </section>
+
+        <!-- Dynamic Game Workspace Container -->
+        <div id="gameWorkspace" class="flex-1 flex flex-col gap-6">
+
+            <!-- Card Decision Phase Section -->
+            <section id="decisionPhaseSection" class="soft-card p-6">
+                <div class="flex flex-col sm:flex-row sm:items-center justify-between mb-4 pb-3 border-b border-slate-200 gap-2">
+                    <div>
+                        <span id="quarterBadge" class="px-3 py-1 bg-brand-100 text-brand-700 text-xs font-extrabold rounded-lg inline-block mb-1">
+                            關卡 1 / 4
+                        </span>
+                        <h2 id="quarterTitle" class="text-xl font-bold text-slate-900">第一階段：起步雙向挫折與學習動機兩極化</h2>
+                    </div>
+                    <button id="resetGameBtn" class="text-xs text-slate-500 hover:text-rose-600 font-semibold flex items-center gap-1 self-start sm:self-auto transition-colors">
+                        <i class="fa-solid fa-rotate-left"></i> 重置學程計畫
+                    </button>
+                </div>
+
+                <p id="quarterContext" class="text-sm text-slate-700 mb-6 leading-relaxed bg-slate-50 p-4 rounded-xl border border-slate-200/80">
+                    AI 基礎入門課開課，選修名單包含 50% 資工系學生與 50% 文法商生醫學生。CS 學生抱怨語法太簡單毫無挑戰，非 CS 學生則被環境設定與語法卡住、面臨極高 GPA 恐慌，準備大規模停課退選。
+                </p>
+
+                <!-- Decision Cards Grid -->
+                <div id="decisionCardsContainer" class="grid grid-cols-1 md:grid-cols-3 gap-5">
+                    <!-- Cards dynamically rendered -->
+                </div>
+            </section>
+
+            <!-- Interactive Minigame Section -->
+            <section id="puzzleSection" class="soft-card p-6 hidden relative overflow-hidden border-2 border-brand-200">
+                <div id="puzzleHeader" class="flex items-center justify-between mb-5 pb-3 border-b border-slate-200">
+                    <div class="flex items-center gap-3">
+                        <div class="p-2.5 bg-emerald-100 text-emerald-700 rounded-xl border border-emerald-200">
+                            <i class="fa-solid fa-puzzle-piece text-lg"></i>
+                        </div>
+                        <div>
+                            <h3 id="puzzleTitle" class="font-bold text-base text-slate-900">教務特訓解謎</h3>
+                            <p id="puzzleSubtitle" class="text-xs text-slate-500">完成特訓任務可獲得額外 KPI 指標加分</p>
+                        </div>
+                    </div>
+                    <button id="skipPuzzleBtn" class="text-xs font-semibold text-slate-400 hover:text-slate-700 underline">跳過解謎 (以預設執行)</button>
+                </div>
+
+                <div id="puzzleBody" class="min-h-[300px] flex flex-col justify-center">
+                    <!-- Interactive Puzzle Injected via JS -->
+                </div>
+            </section>
+
+        </div>
+
+        <!-- Outcome Ending Modal -->
+        <div id="endingModal" class="fixed inset-0 z-50 bg-slate-900/60 backdrop-blur-sm flex items-center justify-center p-4 hidden">
+            <div class="bg-white max-w-2xl w-full p-6 md:p-8 rounded-3xl border border-slate-200 shadow-2xl relative max-h-[90vh] overflow-y-auto">
+                <div class="text-center mb-6">
+                    <span id="endingBadge" class="inline-block px-3 py-1 rounded-full text-xs font-bold mb-2 bg-brand-100 text-brand-700 border border-brand-200">
+                        學程革新報告結算
+                    </span>
+                    <h2 id="endingTitle" class="text-2xl md:text-3xl font-extrabold text-slate-900">跨域典範學程成就誕生！</h2>
+                </div>
+
+                <div class="bg-slate-50 p-4 rounded-2xl border border-slate-200 mb-6 text-slate-700 text-sm leading-relaxed" id="endingStory">
+                    <!-- Ending Story Story -->
+                </div>
+
+                <!-- Final KPI Grid -->
+                <div class="grid grid-cols-2 md:grid-cols-4 gap-3 mb-6">
+                    <div class="bg-slate-50 p-3 rounded-xl text-center border border-slate-200">
+                        <span class="text-xs text-slate-500 block font-medium">CS 滿意度</span>
+                        <span id="end-cs" class="text-base font-extrabold text-indigo-600">0%</span>
+                    </div>
+                    <div class="bg-slate-50 p-3 rounded-xl text-center border border-slate-200">
+                        <span class="text-xs text-slate-500 block font-medium">非 CS 信心</span>
+                        <span id="end-noncs" class="text-base font-extrabold text-amber-600">0%</span>
+                    </div>
+                    <div class="bg-slate-50 p-3 rounded-xl text-center border border-slate-200">
+                        <span class="text-xs text-slate-500 block font-medium">二年級續修率</span>
+                        <span id="end-retention" class="text-base font-extrabold text-emerald-600">0%</span>
+                    </div>
+                    <div class="bg-slate-50 p-3 rounded-xl text-center border border-slate-200">
+                        <span class="text-xs text-slate-500 block font-medium">專題落地分數</span>
+                        <span id="end-innovation" class="text-base font-extrabold text-blue-600">0</span>
+                    </div>
+                </div>
+
+                <!-- Feedback Bullets -->
+                <div class="mb-6">
+                    <h4 class="font-bold text-slate-900 text-sm mb-2 flex items-center gap-2">
+                        <i class="fa-solid fa-clipboard-check text-brand-600"></i> 教務高層策略評估診斷：
+                    </h4>
+                    <ul id="endingFeedbackList" class="space-y-1.5 text-xs text-slate-700 list-disc list-inside bg-slate-50 p-3.5 rounded-xl border border-slate-200">
+                        <!-- Bullets -->
+                    </ul>
+                </div>
+
+                <div class="flex justify-center gap-4">
+                    <button id="restartGameBtn" class="px-6 py-3 bg-brand-600 hover:bg-brand-700 text-white font-bold text-sm rounded-xl transition-all shadow-md shadow-brand-600/20 flex items-center gap-2">
+                        <i class="fa-solid fa-arrow-rotate-left"></i> 重新開辦改革學程
+                    </button>
+                </div>
+            </div>
+        </div>
+
+    </main>
+
+    <!-- Footer -->
+    <footer class="border-t border-slate-200 bg-white py-4 text-center text-xs text-slate-500 font-medium">
+        《跨域解謎：大學 AI 跨域學程救星》 &copy; 大學教務與跨域教學創新決策模擬網頁
+    </footer>
+
+    <!-- Main Game Logic Script -->
+    <script>
+        const gameState = {
+            quarter: 1,
+            metrics: {
+                cs: 45,
+                nonCs: 40,
+                retention: 25,
+                innovation: 35
+            },
+            choicesHistory: []
+        };
+
+        const quarterData = {
+            1: {
+                title: "第一關：起步雙向挫折與動機失衡",
+                context: "AI 基礎入門課開課，選修名單包含 50% 資工系學生與 50% 文法商生醫學生。CS 學生抱怨語法太簡單毫無挑戰，非 CS 學生則被環境設定與語法卡住、面臨極高 GPA 恐慌，準備大規模停課與退選。",
+                cards: [
+                    {
+                        id: "q1_a",
+                        title: "一律採用傳統 Python 語法打底",
+                        type: "保守路線",
+                        desc: "維持傳統資工系「先學 Python 語法與迴圈」模式，堅持技術打底。",
+                        effectDesc: "CS 感到乏味、非 CS 恐慌大增退出",
+                        delta: { cs: -5, nonCs: -20, retention: -15, innovation: +5 },
+                        nextPuzzle: null
+                    },
+                    {
+                        id: "q1_b",
+                        title: "引進 Low-Code/Prompt 體驗微學分",
+                        type: "創新路線",
+                        desc: "非 CS 學生先以 Orange3/Prompt 工具建構 AI 應用自信；CS 學生則擔任微學分專題 TA。",
+                        effectDesc: "大幅降低非 CS 門檻，保留 CS 挑戰空間",
+                        delta: { cs: +10, nonCs: +25, retention: +20, innovation: +10 },
+                        nextPuzzle: "curriculumBuilder"
+                    },
+                    {
+                        id: "q1_c",
+                        title: "調低全班難度至「科普級 AI 概論」",
+                        type: "妥協路線",
+                        desc: "主要觀看科普影片與撰寫簡單心得，確保所有人都能輕鬆拿高分。",
+                        effectDesc: "非 CS 稍微安心，但 CS 學生全面棄修視為營養甜課",
+                        delta: { cs: -30, nonCs: +10, retention: -10, innovation: -20 },
+                        nextPuzzle: null
+                    }
+                ]
+            },
+            2: {
+                title: "第二關：GPA 鎖鏈與評分機制改革",
+                context: "進入實作期，學生開始擔心組隊與最終 GPA 分數會被對方拖累。CS 學生怕非 CS 寫不出 code，非 CS 學生怕被當組內搭便車者（Free rider）並拿到低分影響總成績。",
+                cards: [
+                    {
+                        id: "q2_a",
+                        title: "施行「Pass/Fail 選項」與多元角色權重",
+                        type: "機制改革",
+                        desc: "允許非 CS 選 P/F 避開 GPA 損害，並將評分拆解為：技術落地 (CS) + 領域問題定義 (Non-CS) + 團隊協作。",
+                        effectDesc: "解開 GPA 鎖鏈，提高雙方安全感與協作意願",
+                        delta: { cs: +15, nonCs: +25, retention: +20, innovation: +15 },
+                        nextPuzzle: "gradingReformer"
+                    },
+                    {
+                        id: "q2_b",
+                        title: "維持傳統統一量化評分 (同組同分)",
+                        type: "傳統做法",
+                        desc: "依照最終繳交的 AI 模型準確度 (Accuracy/F1) 同組一律給予相同分數。",
+                        effectDesc: "導致 CS 學生獨自包辦 code，非 CS 學生完全無法參與而放棄",
+                        delta: { cs: +5, nonCs: -20, retention: -15, innovation: +0 },
+                        nextPuzzle: null
+                    },
+                    {
+                        id: "q2_c",
+                        title: "拆分成 CS 組與非 CS 組個別評比",
+                        type: "隔離路線",
+                        desc: "停止跨域交流，CS 學生自己一組做硬核模型，非 CS 學生自己一組做提案海報。",
+                        effectDesc: "各做各的，失去「AI+X 跨領域思維碰撞」的核心理想",
+                        delta: { cs: +5, nonCs: +5, retention: -10, innovation: -25 },
+                        nextPuzzle: null
+                    }
+                ]
+            },
+            3: {
+                title: "第三關：異質團隊組隊與實用專題對齊",
+                context: "進入「跨域整合專題」階段。以往學生自由組隊時，同系學生往往聚在一起，或是組內缺乏領域專家導致做出「技術高超但毫無應用價值的工具」。",
+                cards: [
+                    {
+                        id: "q3_a",
+                        title: "角色型組隊 (Role-based) + 企業真實題目",
+                        type: "戰術升級",
+                        desc: "非 CS 學生擔任 Product Owner (PO) 提痛點與規格，CS 學生擔任 Tech Lead 實現架構，引進企業真實數據。",
+                        effectDesc: "專題價值與續修率顯著提升",
+                        delta: { cs: +20, nonCs: +15, retention: +25, innovation: +25 },
+                        nextPuzzle: "teamMatchmaker"
+                    },
+                    {
+                        id: "q3_b",
+                        title: "讓學生自由配對，不強制干涉",
+                        type: "放任路線",
+                        desc: "由學生自行尋找組員與主題，教師不介入協作架構。",
+                        effectDesc: "CS 與 CS 一組、非 CS 自己一組，跨域成效稀釋",
+                        delta: { cs: +0, nonCs: -5, retention: -10, innovation: -10 },
+                        nextPuzzle: null
+                    },
+                    {
+                        id: "q3_c",
+                        title: "隨機抽籤強制混合組隊",
+                        type: "強制路線",
+                        desc: "以名單電腦抽籤分配組員，不做任何能力或興趣媒合。",
+                        effectDesc: "組員性格與目標不合，引發大量團隊溝通衝突與抱怨",
+                        delta: { cs: -15, nonCs: -15, retention: -15, innovation: -5 },
+                        nextPuzzle: null
+                    }
+                ]
+            },
+            4: {
+                title: "第四關：學程永續性與階梯式深耕",
+                context: "到了畢業前夕，需要將這套「AI+X 跨域學程」制度化，確保高年級學生願意繼續選擇「深度跨域專題」，而非拿了一門基礎學分就離開。",
+                cards: [
+                    {
+                        id: "q4_a",
+                        title: "建立 Level 1-3 階梯式模組與雙導師獎勵",
+                        type: "制度轉型",
+                        desc: "將學程模組化：體驗短課 -> 工具應用 -> 跨域實戰，並給予領域教師鐘點獎勵與專利配對。",
+                        effectDesc: "學程成功永續營運，成為全校典範",
+                        delta: { cs: +15, nonCs: +15, retention: +20, innovation: +20 },
+                        nextPuzzle: null
+                    },
+                    {
+                        id: "q4_b",
+                        title: "申請一次性計畫補助衝高短期宣傳指標",
+                        type: "短線路線",
+                        desc: "舉辦短期大型 AI 研討會與黑客松，宣傳成果但不上修課程結構。",
+                        effectDesc: "活動熱鬧一時，但計畫結束後續修率依然低落",
+                        delta: { cs: +5, nonCs: +0, retention: -5, innovation: +10 },
+                        nextPuzzle: null
+                    },
+                    {
+                        id: "q4_c",
+                        title: "縮減跨域專題，改回各系各自開設專業 AI 課",
+                        type: "退回原點",
+                        desc: "承認跨域整合太困難，將預算撥回各系由資工系開資工的 AI，商管開商管的 AI。",
+                        effectDesc: "學程形同解散，回到傳統單一學術壁壘",
+                        delta: { cs: -10, nonCs: -10, retention: -30, innovation: -20 },
+                        nextPuzzle: null
+                    }
+                ]
+            }
+        };
+
+        function updateDashboardUI() {
+            const m = gameState.metrics;
+            m.cs = Math.min(100, Math.max(0, m.cs));
+            m.nonCs = Math.min(100, Math.max(0, m.nonCs));
+            m.retention = Math.min(100, Math.max(0, m.retention));
+            m.innovation = Math.min(100, Math.max(0, m.innovation));
+
+            document.getElementById('val-cs').innerText = `${m.cs}%`;
+            document.getElementById('bar-cs').style.width = `${m.cs}%`;
+            document.getElementById('desc-cs').innerText = getMetricStatus('cs', m.cs);
+
+            document.getElementById('val-noncs').innerText = `${m.nonCs}%`;
+            document.getElementById('bar-noncs').style.width = `${m.nonCs}%`;
+            document.getElementById('desc-noncs').innerText = getMetricStatus('nonCs', m.nonCs);
+
+            document.getElementById('val-retention').innerText = `${m.retention}%`;
+            document.getElementById('bar-retention').style.width = `${m.retention}%`;
+            document.getElementById('desc-retention').innerText = getMetricStatus('retention', m.retention);
+
+            document.getElementById('val-innovation').innerText = `${m.innovation}`;
+            document.getElementById('bar-innovation').style.width = `${m.innovation}%`;
+            document.getElementById('desc-innovation').innerText = getMetricStatus('innovation', m.innovation);
+        }
+
+        function getMetricStatus(key, val) {
+            if (key === 'cs') {
+                if (val < 35) return '警告：CS 學生認為毫無技術價值，棄修';
+                if (val < 65) return '普通：覺得作業尚可，缺乏進階挑戰';
+                return '優良：樂於擔任跨域 Technical Lead';
+            }
+            if (key === 'nonCs') {
+                if (val < 35) return '危機：高 GPA 恐慌，選擇停損';
+                if (val < 65) return '平穩：適應工具，但仍懷有恐懼';
+                return '卓越：具備 AI 規格制定信心與應用能力';
+            }
+            if (key === 'retention') {
+                if (val < 30) return '警訊：第一年基礎課後續修者極少';
+                if (val < 60) return '尚可：部分學生繼續修讀進階專題';
+                return '極佳：高續修率，形成跨領域梯隊';
+            }
+            if (key === 'innovation') {
+                if (val < 35) return '缺乏具實用價值的跨域專題成果';
+                if (val < 65) return '有基本專題展示，大多為套用模型';
+                return '優秀：產出兼具產業痛點落地的作品';
+            }
+        }
+
+        function renderQuarter() {
+            const q = gameState.quarter;
+            if (q > 4) {
+                showEnding();
+                return;
+            }
+
+            const data = quarterData[q];
+            document.getElementById('quarterBadge').innerText = `關卡 ${q} / 4`;
+            document.getElementById('quarterTitle').innerText = data.title;
+            document.getElementById('quarterContext').innerText = data.context;
+
+            const cardsContainer = document.getElementById('decisionCardsContainer');
+            cardsContainer.innerHTML = '';
+
+            data.cards.forEach(card => {
+                const cardEl = document.createElement('div');
+                cardEl.className = 'soft-card p-5 flex flex-col justify-between card-hover cursor-pointer border border-slate-200 hover:border-brand-500 relative group';
+
+                let deltaText = Object.entries(card.delta).map(([k, v]) => {
+                    const label = { cs: 'CS', nonCs: '非CS', retention: '續修', innovation: '創新' }[k];
+                    const color = v >= 0 ? 'text-emerald-600 font-bold' : 'text-rose-600 font-bold';
+                    return `<span class="${color}">${label} ${v >= 0 ? '+' : ''}${v}</span>`;
+                }).join(' | ');
+
+                cardEl.innerHTML = `
+                    <div>
+                        <div class="flex items-center justify-between mb-2">
+                            <span class="text-[11px] font-bold px-2.5 py-0.5 rounded bg-brand-50 text-brand-700 border border-brand-200">${card.type}</span>
+                        </div>
+                        <h4 class="font-bold text-base text-slate-900 mb-2 group-hover:text-brand-600 transition-colors">${card.title}</h4>
+                        <p class="text-xs text-slate-600 mb-4 leading-relaxed font-medium">${card.desc}</p>
+                    </div>
+                    <div>
+                        <div class="text-[11px] bg-slate-50 p-2.5 rounded-lg mb-4 text-slate-500 border border-slate-200">
+                            <strong>預期影響：</strong>${card.effectDesc}
+                        </div>
+                        <div class="text-xs font-semibold mb-3 flex flex-wrap gap-1">
+                            ${deltaText}
+                        </div>
+                        <button class="w-full py-2.5 bg-brand-600 hover:bg-brand-700 text-white font-bold text-xs rounded-xl transition-all shadow-md shadow-brand-600/20 flex items-center justify-center gap-1.5">
+                            實施此決策方案 <i class="fa-solid fa-arrow-right text-[10px]"></i>
+                        </button>
+                    </div>
+                `;
+
+                cardEl.addEventListener('click', () => {
+                    soundFx.click();
+                    applyDecision(card);
+                });
+
+                cardsContainer.appendChild(cardEl);
+            });
+
+            document.getElementById('puzzleSection').classList.add('hidden');
+            document.getElementById('decisionPhaseSection').classList.remove('hidden');
+        }
+
+        function applyDecision(card) {
+            gameState.metrics.cs += card.delta.cs;
+            gameState.metrics.nonCs += card.delta.nonCs;
+            gameState.metrics.retention += card.delta.retention;
+            gameState.metrics.innovation += card.delta.innovation;
+
+            gameState.choicesHistory.push({ quarter: gameState.quarter, card: card });
+            updateDashboardUI();
+
+            if (card.nextPuzzle) {
+                showPuzzle(card.nextPuzzle);
+            } else {
+                nextQuarter();
+            }
+        }
+
+        function nextQuarter() {
+            gameState.quarter += 1;
+            renderQuarter();
+        }
+
+        // --- Interactive Puzzles ---
+        function showPuzzle(type) {
+            document.getElementById('decisionPhaseSection').classList.add('hidden');
+            const puzzleSection = document.getElementById('puzzleSection');
+            puzzleSection.classList.remove('hidden');
+            const puzzleBody = document.getElementById('puzzleBody');
+            puzzleBody.innerHTML = '';
+
+            if (type === 'curriculumBuilder') {
+                document.getElementById('puzzleTitle').innerText = '實務解謎 1：階梯式課程架構建構器';
+                document.getElementById('puzzleSubtitle').innerText = '請將正確的課程模組填入對應的修課階梯中，建立無痛學習體驗。';
+                renderCurriculumBuilderPuzzle(puzzleBody);
+            } else if (type === 'gradingReformer') {
+                document.getElementById('puzzleTitle').innerText = '實務解謎 2：多元角色評分公式調校器';
+                document.getElementById('puzzleSubtitle').innerText = '調整三項指標比重，達到「技術嚴謹」與「領域痛點」的最佳平衡。';
+                renderGradingReformerPuzzle(puzzleBody);
+            } else if (type === 'teamMatchmaker') {
+                document.getElementById('puzzleTitle').innerText = '實務解謎 3：異質團隊角色配對模擬器';
+                document.getElementById('puzzleSubtitle').innerText = '搭配最適專題團隊，發揮 CS 學生與非 CS 學生的互補優勢。';
+                renderTeamMatchmakerPuzzle(puzzleBody);
+            }
+        }
+
+        // Puzzle 1: Curriculum Builder
+        function renderCurriculumBuilderPuzzle(container) {
+            const modules = [
+                { id: 'm1', name: 'No-Code/Prompt 工具工作坊 (1學分)', level: 1 },
+                { id: 'm2', name: 'Python 基礎語法與資料結構 (3學分)', level: 2 },
+                { id: 'm3', name: '產業真實痛點 AI 跨域實戰 (3學分)', level: 3 }
+            ];
+
+            let state = { l1: null, l2: null, l3: null };
+
+            container.innerHTML = `
+                <div class="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
+                    <div id="drop-l1" class="bg-slate-50 p-4 rounded-2xl border-2 border-dashed border-slate-300 min-h-[130px] flex flex-col items-center justify-center text-center">
+                        <span class="text-xs font-bold text-amber-600 mb-1">Level 1：體驗與門檻降低</span>
+                        <span class="text-[11px] text-slate-500 mb-2">目標：零程式基礎體驗 AI 工具</span>
+                        <div class="slot-content w-full"></div>
+                    </div>
+                    <div id="drop-l2" class="bg-slate-50 p-4 rounded-2xl border-2 border-dashed border-slate-300 min-h-[130px] flex flex-col items-center justify-center text-center">
+                        <span class="text-xs font-bold text-indigo-600 mb-1">Level 2：工具與數據分析</span>
+                        <span class="text-[11px] text-slate-500 mb-2">目標：程式鍛鍊與模型概念</span>
+                        <div class="slot-content w-full"></div>
+                    </div>
+                    <div id="drop-l3" class="bg-slate-50 p-4 rounded-2xl border-2 border-dashed border-slate-300 min-h-[130px] flex flex-col items-center justify-center text-center">
+                        <span class="text-xs font-bold text-emerald-600 mb-1">Level 3：跨域專題落地</span>
+                        <span class="text-[11px] text-slate-500 mb-2">目標：異質團隊解決領域問題</span>
+                        <div class="slot-content w-full"></div>
+                    </div>
+                </div>
+
+                <div class="mb-4 bg-white p-3 rounded-xl border border-slate-200">
+                    <label class="text-xs font-bold text-slate-600 block mb-2">點擊選擇課程模組依序填入階梯：</label>
+                    <div class="flex flex-wrap gap-2" id="modulePool">
+                        ${modules.map(m => `
+                            <button data-id="${m.id}" class="module-btn px-3 py-2 bg-slate-100 border border-slate-300 hover:border-brand-500 rounded-lg text-xs font-semibold text-slate-700 transition-all">
+                                ${m.name}
+                            </button>
+                        `).join('')}
+                    </div>
+                </div>
+
+                <div class="text-right">
+                    <button id="submitPuzzle1" class="px-5 py-2.5 bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-xs rounded-xl transition-all shadow-md">
+                        驗證課程階梯佈局
+                    </button>
+                </div>
+            `;
+
+            let selectedOrder = [];
+            container.querySelectorAll('.module-btn').forEach(btn => {
+                btn.addEventListener('click', () => {
+                    soundFx.click();
+                    const mid = btn.getAttribute('data-id');
+                    const mod = modules.find(x => x.id === mid);
+
+                    if (selectedOrder.includes(mod)) return;
+                    selectedOrder.push(mod);
+                    btn.classList.add('opacity-40', 'pointer-events-none');
+
+                    if (selectedOrder.length === 1) {
+                        document.querySelector('#drop-l1 .slot-content').innerHTML = `<div class="bg-brand-50 border border-brand-300 p-2 rounded-lg text-xs font-bold text-brand-700">${mod.name}</div>`;
+                        state.l1 = mod;
+                    } else if (selectedOrder.length === 2) {
+                        document.querySelector('#drop-l2 .slot-content').innerHTML = `<div class="bg-brand-50 border border-brand-300 p-2 rounded-lg text-xs font-bold text-brand-700">${mod.name}</div>`;
+                        state.l2 = mod;
+                    } else if (selectedOrder.length === 3) {
+                        document.querySelector('#drop-l3 .slot-content').innerHTML = `<div class="bg-brand-50 border border-brand-300 p-2 rounded-lg text-xs font-bold text-brand-700">${mod.name}</div>`;
+                        state.l3 = mod;
+                    }
+                });
+            });
+
+            document.getElementById('submitPuzzle1').addEventListener('click', () => {
+                if (state.l1 && state.l1.level === 1 && state.l2 && state.l2.level === 2 && state.l3 && state.l3.level === 3) {
+                    soundFx.success();
+                    gameState.metrics.nonCs += 10;
+                    gameState.metrics.retention += 10;
+                    updateDashboardUI();
+                    alert("【解謎成功】完美建構階梯式學程！非 CS 學生安心感與續修率額外增加 +10%");
+                    nextQuarter();
+                } else {
+                    soundFx.alert();
+                    alert("【架構調整建議】課程順序不妥！應由 Low-Code/Prompt 入門 (Level 1)，再進階至語法 (Level 2)，最後進行跨域專題 (Level 3)。");
+                }
+            });
+        }
+
+        // Puzzle 2: Grading Reformer
+        function renderGradingReformerPuzzle(container) {
+            container.innerHTML = `
+                <div class="max-w-xl mx-auto w-full space-y-5">
+                    <div class="bg-white p-3 rounded-xl border border-slate-200">
+                        <div class="flex justify-between text-xs mb-1">
+                            <span class="text-indigo-600 font-bold">1. 技術實現與模型精準度 (CS 核心)</span>
+                            <span id="sliderVal1" class="font-extrabold text-slate-900">40%</span>
+                        </div>
+                        <input type="range" id="s1" min="10" max="70" value="40" class="w-full accent-indigo-600">
+                    </div>
+
+                    <div class="bg-white p-3 rounded-xl border border-slate-200">
+                        <div class="flex justify-between text-xs mb-1">
+                            <span class="text-amber-600 font-bold">2. 領域問題定義與價值 (非 CS 核心)</span>
+                            <span id="sliderVal2" class="font-extrabold text-slate-900">40%</span>
+                        </div>
+                        <input type="range" id="s2" min="10" max="70" value="40" class="w-full accent-amber-500">
+                    </div>
+
+                    <div class="bg-white p-3 rounded-xl border border-slate-200">
+                        <div class="flex justify-between text-xs mb-1">
+                            <span class="text-emerald-600 font-bold">3. 跨域溝通與團隊協作貢獻</span>
+                            <span id="sliderVal3" class="font-extrabold text-slate-900">20%</span>
+                        </div>
+                        <input type="range" id="s3" min="10" max="50" value="20" class="w-full accent-emerald-600">
+                    </div>
+
+                    <div class="bg-slate-100 p-3 rounded-xl border border-slate-200 text-center text-xs">
+                        總權重比例：<span id="totalWeight" class="font-extrabold text-emerald-600">100%</span>
+                    </div>
+
+                    <div class="text-right">
+                        <button id="submitPuzzle2" class="px-5 py-2.5 bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-xs rounded-xl transition-all shadow-md">
+                            確認評分比例公式
+                        </button>
+                    </div>
+                </div>
+            `;
+
+            const s1 = document.getElementById('s1');
+            const s2 = document.getElementById('s2');
+            const s3 = document.getElementById('s3');
+
+            function updateSliders() {
+                document.getElementById('sliderVal1').innerText = `${s1.value}%`;
+                document.getElementById('sliderVal2').innerText = `${s2.value}%`;
+                document.getElementById('sliderVal3').innerText = `${s3.value}%`;
+
+                const total = parseInt(s1.value) + parseInt(s2.value) + parseInt(s3.value);
+                const totalEl = document.getElementById('totalWeight');
+                totalEl.innerText = `${total}%`;
+                if (total === 100) {
+                    totalEl.className = "font-extrabold text-emerald-600";
+                } else {
+                    totalEl.className = "font-extrabold text-rose-600";
+                }
+            }
+
+            [s1, s2, s3].forEach(s => s.addEventListener('input', updateSliders));
+
+            document.getElementById('submitPuzzle2').addEventListener('click', () => {
+                const v1 = parseInt(s1.value);
+                const v2 = parseInt(s2.value);
+                const v3 = parseInt(s3.value);
+                const total = v1 + v2 + v3;
+
+                if (total !== 100) {
+                    soundFx.alert();
+                    alert("請調整三項權重，使其總和剛好等於 100%！");
+                    return;
+                }
+
+                if (Math.abs(v1 - v2) <= 15 && v3 >= 20) {
+                    soundFx.success();
+                    gameState.metrics.cs += 10;
+                    gameState.metrics.nonCs += 10;
+                    gameState.metrics.innovation += 10;
+                    updateDashboardUI();
+                    alert("【解謎成功】成功平衡技術與領域價值！雙方學生獲得公平認可，滿意度與創新分額外 +10！");
+                    nextQuarter();
+                } else {
+                    soundFx.alert();
+                    alert("【建議重新調整】權重過度傾斜！若技術比重太高會恐嚇非 CS 學生；若領域比重過高 CS 學生會失去技術發揮動機。");
+                }
+            });
+        }
+
+        // Puzzle 3: Team Matchmaker
+        function renderTeamMatchmakerPuzzle(container) {
+            container.innerHTML = `
+                <div class="space-y-4">
+                    <p class="text-xs text-slate-700 font-medium">請為「生醫數據 AI 預測專題」指派最適切的角色陣容（必須同時包含 CS 與非 CS 專業）：</p>
+
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <div class="bg-white p-3.5 rounded-xl border border-slate-200">
+                            <span class="text-xs font-bold text-indigo-600 block mb-2">專題角色 A：Technical Lead (技術主導)</span>
+                            <select id="roleA" class="w-full bg-slate-50 border border-slate-300 text-xs font-medium rounded-lg p-2.5 text-slate-800">
+                                <option value="">-- 請選擇學生 --</option>
+                                <option value="cs_1">資工系大三 小明 (擅長 PyTorch/API 串接)</option>
+                                <option value="noncs_1">中文系大二 阿花 (擅長文案與簡報)</option>
+                            </select>
+                        </div>
+
+                        <div class="bg-white p-3.5 rounded-xl border border-slate-200">
+                            <span class="text-xs font-bold text-amber-600 block mb-2">專題角色 B：Product Owner (領域痛點與規格)</span>
+                            <select id="roleB" class="w-full bg-slate-50 border border-slate-300 text-xs font-medium rounded-lg p-2.5 text-slate-800">
+                                <option value="">-- 請選擇學生 --</option>
+                                <option value="noncs_2">生醫系大三 雅婷 (熟悉臨床數據與衛教痛點)</option>
+                                <option value="cs_2">資工系大二 小華 (無臨床背景)</option>
+                            </select>
+                        </div>
+                    </div>
+
+                    <div class="text-right">
+                        <button id="submitPuzzle3" class="px-5 py-2.5 bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-xs rounded-xl transition-all shadow-md">
+                            組隊啟動專題
+                        </button>
+                    </div>
+                </div>
+            `;
+
+            document.getElementById('submitPuzzle3').addEventListener('click', () => {
+                const rA = document.getElementById('roleA').value;
+                const rB = document.getElementById('roleB').value;
+
+                if (rA === 'cs_1' && rB === 'noncs_2') {
+                    soundFx.success();
+                    gameState.metrics.innovation += 15;
+                    gameState.metrics.retention += 10;
+                    updateDashboardUI();
+                    alert("【解謎成功】完美的異質組合！生醫系學生定義真實臨床痛點，CS 學生打造高準確度模型，專題獲得全國競賽大獎！");
+                    nextQuarter();
+                } else {
+                    soundFx.alert();
+                    alert("【配對失敗】角色分工不當！非 CS 學生無法勝任 Tech Lead；缺乏領域專家則會做出無用工具。");
+                }
+            });
+        }
+
+        document.getElementById('skipPuzzleBtn').addEventListener('click', () => {
+            soundFx.click();
+            nextQuarter();
+        });
+
+        // Show Final Outcome Report
+        function showEnding() {
+            const m = gameState.metrics;
+            const endingModal = document.getElementById('endingModal');
+            endingModal.classList.remove('hidden');
+
+            document.getElementById('end-cs').innerText = `${m.cs}%`;
+            document.getElementById('end-noncs').innerText = `${m.nonCs}%`;
+            document.getElementById('end-retention').innerText = `${m.retention}%`;
+            document.getElementById('end-innovation').innerText = `${m.innovation}`;
+
+            let title = "";
+            let badge = "";
+            let story = "";
+            let feedback = [];
+
+            if (m.retention >= 60 && m.innovation >= 60 && m.nonCs >= 55) {
+                badge = "OUTCOME S：典範 AI 跨域學程";
+                title = "🎉 跨域新星！打造全國兼具技術與落地的典範學程";
+                story = "恭喜您！透過「階梯式微學分」、「Pass/Fail 評分機制改革」與「角色型異質組隊」，成功解開了大學跨域教學的百年僵局。非 CS 學生不再害怕 GPA 被程式拖累，並學會以 AI 解決本系痛點；CS 學生不再將學程視為甜課，而是擔任 Technical Lead 累積高品質履歷！二年級續修率高達 80%！";
+                feedback = [
+                    "成功解除『CS 甜課 / 非 CS 修羅場』的兩極化困境。",
+                    "階梯式課程有效降低了第一年的試錯與心理門檻。",
+                    "異質團隊專題獲得產業與教務高層的高度讚賞。"
+                ];
+                confetti({ particleCount: 100, spread: 70, origin: { y: 0.6 } });
+            } else if (m.cs >= 65 && m.nonCs <= 40) {
+                badge = "OUTCOME A：非 CS 停損修羅場";
+                title = "⚠️ 技術至上，非 CS 學生大規模停損退選";
+                story = "學程變成了資工系的『後花園』與甜課。課程硬核導向導致非 CS 學生第一學期就因為 GPA 恐慌而選擇停損。到了第二年，學程只剩下 CS 學生自己玩，失去了『跨領域思維碰撞』的初衷。";
+                feedback = [
+                    "未提供 Low-Code 或微學分緩衝，非 CS 學生被 Python 語法直接勸退。",
+                    "GPA 評分機制過度看重程式碼，未給予領域問題定義應有的分數。"
+                ];
+            } else if (m.nonCs >= 65 && m.cs <= 40) {
+                badge = "OUTCOME B：CS 營養甜課工廠";
+                title = "⚠️ 內容過淺，缺乏技術深度與落地價值";
+                story = "為了照顧非 CS 學生，課程簡化為科普級概論。非 CS 學生雖然拿了高分，但學不到實用真功夫；CS 學生則覺得無聊至極，修完一學期後紛紛離開，最終專題只留在海報展示層次。";
+                feedback = [
+                    "缺乏對 CS 學生發揮技術能力的定位設計。",
+                    "專題深度不足，無法產出具備競爭力的產業落地成果。"
+                ];
+            } else {
+                badge = "OUTCOME C：官僚妥協型的平庸學程";
+                title = "😐 官僚妥協：學程平穩但缺乏續修動力";
+                story = "學程在傳統體制下勉強維持營運，但第二年的專題續修率低落。學校理想與教學現場依然存在隔閡，學生多半只是為了湊滿通識學分而來，未能深耕跨域價值。";
+                feedback = [
+                    "建議更勇於進行學分機制與 Pass/Fail 制度的改革。",
+                    "應加強與企業真實題目的對接，提升專題含金量。"
+                ];
+            }
+
+            document.getElementById('endingBadge').innerText = badge;
+            document.getElementById('endingTitle').innerText = title;
+            document.getElementById('endingStory').innerText = story;
+
+            const fbList = document.getElementById('endingFeedbackList');
+            fbList.innerHTML = feedback.map(f => `<li>${f}</li>`).join('');
+        }
+
+        document.getElementById('resetGameBtn').addEventListener('click', resetGame);
+        document.getElementById('restartGameBtn').addEventListener('click', resetGame);
+
+        function resetGame() {
+            soundFx.click();
+            gameState.quarter = 1;
+            gameState.metrics = { cs: 45, nonCs: 40, retention: 25, innovation: 35 };
+            gameState.choicesHistory = [];
+            document.getElementById('endingModal').classList.add('hidden');
+            updateDashboardUI();
+            renderQuarter();
+        }
+
+        window.onload = function() {
+            updateDashboardUI();
+            renderQuarter();
+        };
+    </script>
+</body>
+</html>

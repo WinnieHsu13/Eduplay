@@ -1,0 +1,374 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>中大校務研究島 (NCU OIR Island)</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;800&display=swap" rel="stylesheet">
+    <style>
+        body {
+            margin: 0;
+            overflow: hidden;
+            font-family: 'Inter', 'Noto Sans TC', sans-serif;
+            background: radial-gradient(circle at center, #cffafe 0%, #7dd3fc 50%, #38bdf8 100%);
+        }
+        
+        .island-shape {
+            border-radius: 45% 55% 40% 60% / 55% 45% 60% 40%;
+            background: linear-gradient(135deg, #a7f3d0 0%, #34d399 50%, #10b981 100%);
+            box-shadow: 
+                inset -10px -10px 20px rgba(0,0,0,0.1),
+                inset 10px 10px 20px rgba(255,255,255,0.4),
+                0 20px 40px rgba(2, 132, 199, 0.3),
+                0 40px 0 -10px #0ea5e9;
+            animation: float 6s ease-in-out infinite;
+        }
+
+        @keyframes float {
+            0% { transform: translateY(0px) rotate(0deg); }
+            50% { transform: translateY(-15px) rotate(1deg); }
+            100% { transform: translateY(0px) rotate(0deg); }
+        }
+
+        @keyframes pulse-ring {
+            0% { transform: scale(0.8); opacity: 0.5; }
+            80% { transform: scale(1.5); opacity: 0; }
+            100% { transform: scale(1.5); opacity: 0; }
+        }
+        .node-pulse::before {
+            content: '';
+            position: absolute;
+            inset: -8px;
+            border-radius: 50%;
+            border: 3px solid currentColor;
+            animation: pulse-ring 2s cubic-bezier(0.215, 0.61, 0.355, 1) infinite;
+            z-index: -1;
+        }
+
+        ::-webkit-scrollbar { width: 8px; }
+        ::-webkit-scrollbar-track { background: #f1f1f1; border-radius: 4px; }
+        ::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 4px; }
+        ::-webkit-scrollbar-thumb:hover { background: #94a3b8; }
+    </style>
+</head>
+<body class="w-screen h-screen flex items-center justify-center relative">
+
+    <div class="relative w-11/12 max-w-4xl aspect-[4/3] flex items-center justify-center z-10">
+        <div class="island-shape absolute w-full h-full max-w-[800px] max-h-[600px] transition-transform duration-300">
+            <div class="absolute top-[10%] left-[20%] text-3xl opacity-80">🌲</div>
+            <div class="absolute top-[15%] right-[15%] text-2xl opacity-80">🌲</div>
+            <div class="absolute bottom-[20%] left-[10%] text-4xl opacity-80">🌲</div>
+            <div class="absolute bottom-[10%] right-[25%] text-2xl opacity-80">🌲</div>
+            <div class="absolute top-[40%] right-[5%] text-3xl opacity-80">🌲</div>
+        </div>
+
+        <div id="nodes-container" class="absolute inset-0 max-w-[800px] max-h-[600px] mx-auto pointer-events-none">
+            <!-- JavaScript 注入節點 -->
+        </div>
+    </div>
+
+    <div id="ui-layer" class="absolute inset-0 flex flex-col justify-between p-6 pointer-events-none z-20">
+        
+        <div class="flex justify-between items-start pointer-events-auto">
+            <div class="bg-white/90 backdrop-blur-md p-5 rounded-2xl shadow-lg border border-white/50">
+                <h1 class="text-3xl font-extrabold text-slate-800 tracking-tight">中大校務研究島 <span class="text-emerald-600">🌲</span></h1>
+                <p class="text-sm text-slate-500 mt-1 font-semibold">NCU Office of Institutional Research</p>
+                <div class="mt-4 flex items-center gap-3">
+                    <span class="bg-emerald-100 text-emerald-800 text-xs font-bold px-3 py-1 rounded-full shadow-sm">探索進度</span>
+                    <div class="w-40 h-3 bg-gray-200 rounded-full overflow-hidden shadow-inner">
+                        <div id="progress-bar" class="h-full bg-gradient-to-r from-emerald-400 to-teal-500 transition-all duration-700 ease-out" style="width: 0%;"></div>
+                    </div>
+                    <span id="progress-text" class="text-sm font-black text-slate-700">0/5</span>
+                </div>
+            </div>
+            
+            <div class="bg-white/90 backdrop-blur-md p-4 rounded-xl shadow-lg border border-white/50 text-right">
+                <p class="text-xs text-slate-500 font-bold mb-2 uppercase tracking-wider">操作說明</p>
+                <p class="text-sm text-slate-700 font-medium flex items-center justify-end gap-2">👆 <span>點擊島上標記探索</span></p>
+                <p class="text-sm text-slate-700 font-medium flex items-center justify-end gap-2 mt-1">🎯 <span>收集全區數據</span></p>
+            </div>
+        </div>
+
+        <div id="completion-message" class="pointer-events-auto mx-auto mb-10 bg-white/95 backdrop-blur border-2 border-yellow-400 p-6 rounded-2xl shadow-2xl transform translate-y-20 opacity-0 transition-all duration-700 max-w-md text-center hidden">
+            <div class="text-5xl mb-3">🎉</div>
+            <h3 class="text-xl font-bold text-slate-800 mb-2">任務完成！</h3>
+            <p class="text-slate-600 text-sm">您已探索完中大校務研究島的所有數據模組！這些數據將成為推動學校進步的重要決策基石。</p>
+            <button onclick="document.getElementById('completion-message').classList.add('opacity-0', 'translate-y-20')" class="mt-4 bg-yellow-400 hover:bg-yellow-500 text-yellow-900 font-bold py-2 px-6 rounded-lg transition-colors">
+                太棒了
+            </button>
+        </div>
+
+        <div id="info-modal" class="fixed inset-0 flex items-center justify-center bg-slate-900/40 backdrop-blur-sm opacity-0 pointer-events-none transition-opacity duration-300 z-50">
+            <div class="bg-white rounded-3xl shadow-2xl w-11/12 max-w-lg overflow-hidden transform scale-95 transition-transform duration-300 pointer-events-auto border border-slate-100" id="modal-content-box">
+                <div id="modal-header" class="px-6 py-5 text-white flex justify-between items-center transition-colors duration-300">
+                    <div class="flex items-center gap-3">
+                        <div id="modal-icon" class="text-3xl bg-white/20 w-12 h-12 flex items-center justify-center rounded-full shadow-inner">📊</div>
+                        <h2 id="modal-title" class="text-2xl font-bold tracking-wide">建築名稱</h2>
+                    </div>
+                    <button id="close-btn" class="text-white/80 hover:text-white bg-white/10 hover:bg-white/20 p-2 rounded-full transition-colors focus:outline-none">
+                        <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path></svg>
+                    </button>
+                </div>
+                <div class="p-6">
+                    <p id="modal-desc" class="text-slate-600 leading-relaxed mb-5 text-lg">這裡是詳細的敘述內容...</p>
+                    
+                    <div class="bg-slate-50 p-5 rounded-2xl border border-slate-200 shadow-sm">
+                        <h3 class="text-sm font-bold text-slate-800 mb-3 flex items-center gap-2">
+                            <svg class="w-5 h-5 text-emerald-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-3 7h3m-3 4h3m-6-4h.01M9 16h.01"></path></svg>
+                            核心數據亮點
+                        </h3>
+                        <ul id="modal-stats" class="space-y-3 text-slate-600 max-h-52 overflow-y-auto pr-2">
+                            <!-- Injected by JS -->
+                        </ul>
+                    </div>
+
+                    <div class="mt-6 flex gap-3">
+                        <button id="explore-btn" class="flex-1 text-white font-bold py-3 px-4 rounded-xl transition-all duration-300 shadow-lg transform active:scale-95 text-lg">
+                            收集數據
+                        </button>
+                        <a id="site-link-btn" href="#" target="_blank" rel="noopener noreferrer" class="flex-1 flex justify-center items-center bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold py-3 px-4 rounded-xl transition-all duration-300 shadow-sm text-lg border border-slate-200">
+                            🔗 前往官網
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const buildingData = [
+            {
+                id: 'ai-governance',
+                title: 'AI校務治理中心',
+                icon: '🤖',
+                colorClass: 'purple',
+                hexColor: '#8b5cf6',
+                desc: '推動校園AI應用，包含實務競賽及教育訓練，打造智慧化校務決策環境。',
+                stats: [
+                    { text: '「2026 AI校務治理實務競賽」最高獎金30萬', link: 'https://ir.ncu.edu.tw/p/406-1034-216,r11.php?Lang=zh-tw' },
+                    { text: '參賽組別與行政單位媒合活動', link: 'https://ir.ncu.edu.tw/p/406-1034-14159,r11.php?Lang=zh-tw' },
+                    { text: 'AI校務研究增能講座', link: 'https://ir.ncu.edu.tw/p/412-1034-82.php?Lang=zh-tw' },
+                    { text: 'Microsoft Copilot 入門實戰與AI助理', link: 'https://ir.ncu.edu.tw/p/406-1034-213,r11.php?Lang=zh-tw' }
+                ],
+                position: { top: '50%', left: '45%' },
+                link: 'https://ir.ncu.edu.tw/p/412-1034-82.php?Lang=zh-tw'
+            },
+            {
+                id: 'ir-topics',
+                title: '研究議題觀測站',
+                icon: '📊',
+                colorClass: 'blue',
+                hexColor: '#3b82f6',
+                desc: '聚焦於學生學習成效、招生策略與教學品質等核心議題，提供實證數據分析。',
+                stats: [
+                    { text: '世界大學排名現況比較分析 (QS-Asia, THE)', link: 'https://ir.ncu.edu.tw/p/412-1034-84.php?Lang=zh-tw' },
+                    { text: '教職員永續性風險指標（FSI）', link: 'https://ir.ncu.edu.tw/p/412-1034-84.php?Lang=zh-tw' },
+                    { text: 'AI應用量表之探索性因素分析與修訂', link: 'https://ir.ncu.edu.tw/p/412-1034-84.php?Lang=zh-tw' },
+                    { text: 'AI跨域學程學習表現與續讀行為分析', link: 'https://ir.ncu.edu.tw/p/412-1034-84.php?Lang=zh-tw' },
+                    { text: '2026 QS World University Rankings by Subject', link: 'https://ir.ncu.edu.tw/p/412-1034-84.php?Lang=zh-tw' }
+                ],
+                position: { top: '25%', left: '20%' },
+                link: 'https://ir.ncu.edu.tw/p/412-1034-84.php?Lang=zh-tw'
+            },
+            {
+                id: 'data-service',
+                title: '數據服務與申請處',
+                icon: '📁',
+                colorClass: 'emerald',
+                hexColor: '#10b981',
+                desc: '維護校務研究資料庫，提供校內單位申請數據，並把關資料安全與隱私。',
+                stats: [
+                    { text: '校務研究資料申請線上平台 (IRSys)', link: 'https://cis.ncu.edu.tw/IRSys/' },
+                    { text: '資料申請作業要點與規範下載', link: 'https://ir.ncu.edu.tw/p/412-1034-2329.php?Lang=zh-tw' },
+                    { text: '紙本資料使用申請單', link: 'https://ir.ncu.edu.tw/p/412-1034-2329.php?Lang=zh-tw' },
+                    { text: '保密同意書與安全聲明表單', link: 'https://ir.ncu.edu.tw/p/412-1034-2329.php?Lang=zh-tw' }
+                ],
+                position: { top: '30%', left: '70%' },
+                link: 'https://ir.ncu.edu.tw/p/412-1034-2329.php?Lang=zh-tw'
+            },
+            {
+                id: 'empowerment',
+                title: '增能培訓學院',
+                icon: '💡',
+                colorClass: 'pink',
+                hexColor: '#ec4899',
+                desc: '辦理各類工作坊與實作坊，致力於提升全校教職員的數據素養與分析能力。',
+                stats: [
+                    { text: '2027 第六屆 TAIR 年會暨國際研討會', link: 'https://tair.tw/' },
+                    { text: 'AI驅動校務研究新典範研討會', link: 'https://ir.ncu.edu.tw/' },
+                    { text: 'TAIR 校務研究共學實作坊系列', link: 'https://ir.ncu.edu.tw/p/412-1034-82.php?Lang=zh-tw' },
+                    { text: '經濟文化不利學生教育成效評估實作', link: 'https://ir.ncu.edu.tw/' }
+                ],
+                position: { top: '75%', left: '60%' },
+                link: 'https://ir.ncu.edu.tw/'
+            },
+            {
+                id: 'regulations',
+                title: '政策與規章大廳',
+                icon: '⚖️',
+                colorClass: 'amber',
+                hexColor: '#f59e0b',
+                desc: '公開校務研究相關各項規範，確保研究活動具備完善的法源與倫理基礎。',
+                stats: [
+                    { text: '國立中央大學校務研究辦公室設置要點', link: 'https://ir.ncu.edu.tw/p/412-1034-2162.php?Lang=zh-tw' },
+                    { text: '國立中央大學校務研究資料管理辦法', link: 'https://ir.ncu.edu.tw/p/412-1034-2162.php?Lang=zh-tw' },
+                    { text: '研究倫理與作業合規性審查說明', link: 'https://ir.ncu.edu.tw/p/412-1034-2162.php?Lang=zh-tw' },
+                    { text: '個人資料保護與資料庫使用規範', link: 'https://ir.ncu.edu.tw/p/412-1034-2162.php?Lang=zh-tw' }
+                ],
+                position: { top: '65%', left: '25%' },
+                link: 'https://ir.ncu.edu.tw/p/412-1034-2162.php?Lang=zh-tw'
+            }
+        ];
+
+        let exploredNodes = new Set();
+        let activeBuildingData = null;
+
+        const nodesContainer = document.getElementById('nodes-container');
+        const modal = document.getElementById('info-modal');
+        const modalContentBox = document.getElementById('modal-content-box');
+        const modalHeader = document.getElementById('modal-header');
+        const modalTitle = document.getElementById('modal-title');
+        const modalIcon = document.getElementById('modal-icon');
+        const modalDesc = document.getElementById('modal-desc');
+        const modalStats = document.getElementById('modal-stats');
+        const closeBtn = document.getElementById('close-btn');
+        const exploreBtn = document.getElementById('explore-btn');
+        const siteLinkBtn = document.getElementById('site-link-btn');
+        const progressBar = document.getElementById('progress-bar');
+        const progressText = document.getElementById('progress-text');
+        const completionMsg = document.getElementById('completion-message');
+
+        function renderMap() {
+            buildingData.forEach(data => {
+                const wrapper = document.createElement('div');
+                wrapper.className = 'absolute transform -translate-x-1/2 -translate-y-1/2 flex flex-col items-center gap-2 pointer-events-auto cursor-pointer group z-10';
+                wrapper.style.top = data.position.top;
+                wrapper.style.left = data.position.left;
+                
+                const btn = document.createElement('div');
+                btn.id = `node-${data.id}`;
+                btn.className = `w-16 h-16 bg-white rounded-full flex items-center justify-center text-3xl shadow-[0_8px_15px_rgba(0,0,0,0.1)] border-4 border-${data.colorClass}-400 text-${data.colorClass}-500 transition-all duration-300 group-hover:-translate-y-2 group-hover:shadow-[0_15px_25px_rgba(0,0,0,0.2)] node-pulse relative`;
+                btn.style.borderColor = data.hexColor;
+                btn.style.color = data.hexColor;
+                btn.innerHTML = `<span class="z-10 relative drop-shadow-sm">${data.icon}</span>`;
+
+                const label = document.createElement('div');
+                label.className = `bg-white/90 backdrop-blur px-3 py-1 rounded-full text-sm font-bold shadow-md whitespace-nowrap transition-all duration-300 opacity-90 group-hover:opacity-100 group-hover:-translate-y-1`;
+                label.style.color = data.hexColor;
+                label.innerText = data.title;
+
+                wrapper.appendChild(btn);
+                wrapper.appendChild(label);
+
+                wrapper.addEventListener('click', () => openModal(data));
+                
+                nodesContainer.appendChild(wrapper);
+            });
+        }
+
+        function openModal(data) {
+            activeBuildingData = data;
+            
+            modalTitle.innerText = data.title;
+            modalIcon.innerText = data.icon;
+            modalDesc.innerText = data.desc;
+            modalHeader.style.background = `linear-gradient(135deg, ${data.hexColor}, #475569)`; 
+
+            modalStats.innerHTML = '';
+            data.stats.forEach(stat => {
+                const li = document.createElement('li');
+                li.className = "flex items-center gap-2 bg-white rounded-lg border border-slate-100 shadow-sm transition-all hover:bg-slate-50 hover:shadow-md group";
+                
+                const linkObj = document.createElement('a');
+                linkObj.href = stat.link;
+                linkObj.target = "_blank"; 
+                linkObj.rel = "noopener noreferrer"; // 安全性屬性
+                linkObj.className = "flex items-center gap-2 w-full p-3 text-slate-600 hover:text-slate-900 font-medium";
+                
+                linkObj.innerHTML = `
+                    <span style="color: ${data.hexColor}" class="text-xl leading-none transition-transform group-hover:scale-125">•</span> 
+                    <span class="flex-1">${stat.text}</span>
+                    <svg class="w-4 h-4 text-slate-300 transition-colors group-hover:text-slate-500 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14"></path></svg>
+                `;
+                
+                li.appendChild(linkObj);
+                modalStats.appendChild(li);
+            });
+
+            if(exploredNodes.has(data.id)) {
+                exploreBtn.innerText = "✅ 已收集";
+                exploreBtn.style.backgroundColor = '#94a3b8';
+                exploreBtn.className = "flex-1 text-white font-bold py-3 px-4 rounded-xl shadow-md cursor-default text-lg transition-colors";
+            } else {
+                exploreBtn.innerText = "📥 收集數據";
+                exploreBtn.style.backgroundColor = data.hexColor;
+                exploreBtn.className = "flex-1 text-white font-bold py-3 px-4 rounded-xl transition-all duration-300 shadow-lg transform hover:scale-[1.02] active:scale-95 text-lg hover:brightness-110";
+            }
+            
+            siteLinkBtn.href = data.link;
+
+            modal.classList.remove('opacity-0', 'pointer-events-none');
+            setTimeout(() => {
+                modalContentBox.classList.remove('scale-95');
+                modalContentBox.classList.add('scale-100');
+            }, 10);
+        }
+
+        function closeModal() {
+            modalContentBox.classList.remove('scale-100');
+            modalContentBox.classList.add('scale-95');
+            setTimeout(() => {
+                modal.classList.add('opacity-0', 'pointer-events-none');
+            }, 300);
+        }
+
+        closeBtn.addEventListener('click', closeModal);
+        modal.addEventListener('click', (e) => {
+            if(e.target === modal) closeModal(); 
+        });
+
+        exploreBtn.addEventListener('click', () => {
+            if(!activeBuildingData) return;
+            
+            if(!exploredNodes.has(activeBuildingData.id)) {
+                exploredNodes.add(activeBuildingData.id);
+                
+                exploreBtn.innerText = "✅ 已收集";
+                exploreBtn.style.backgroundColor = '#94a3b8';
+                exploreBtn.classList.remove('hover:scale-[1.02]', 'active:scale-95', 'hover:brightness-110');
+                
+                const nodeBtn = document.getElementById(`node-${activeBuildingData.id}`);
+                if(nodeBtn) {
+                    nodeBtn.classList.remove('node-pulse');
+                    nodeBtn.style.backgroundColor = activeBuildingData.hexColor;
+                    nodeBtn.innerHTML = `<span class="z-10 relative drop-shadow-md text-white">${activeBuildingData.icon}</span>`;
+                    const check = document.createElement('div');
+                    check.className = 'absolute -top-2 -right-2 bg-emerald-500 text-white rounded-full w-6 h-6 flex items-center justify-center text-sm border-2 border-white shadow-sm';
+                    check.innerText = '✓';
+                    nodeBtn.appendChild(check);
+                }
+                
+                updateProgress();
+            }
+        });
+
+        function updateProgress() {
+            const total = buildingData.length;
+            const current = exploredNodes.size;
+            progressText.innerText = `${current}/${total}`;
+            progressBar.style.width = `${(current / total) * 100}%`;
+
+            if(current === total) {
+                setTimeout(() => {
+                    completionMsg.classList.remove('hidden');
+                    void completionMsg.offsetWidth;
+                    completionMsg.classList.remove('opacity-0', 'translate-y-20');
+                }, 1000);
+            }
+        }
+
+        renderMap();
+    </script>
+</body>
+</html>
