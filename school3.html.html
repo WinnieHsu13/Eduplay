@@ -1,0 +1,943 @@
+<!DOCTYPE html>
+<html lang="zh-TW" class="dark">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>《校園解密：新聞事件背後的消失真相》實境解謎 PBL 學習系統</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Fredoka:wght@400;600;700&family=Noto+Sans+TC:wght@500;700;900&display=swap">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+  
+  <script>
+    tailwind.config = {
+      darkMode: 'class',
+      theme: {
+        extend: {
+          colors: {
+            cute: {
+              bg: '#fcf8f2',      /* 溫柔米白 */
+              card: '#ffffff',    /* 純白卡片 */
+              pink: '#ffb7c5',    /* 櫻花粉 */
+              pinkHover: '#ff9ebb',
+              sky: '#a2d2ff',     /* 柔粉藍 */
+              skyHover: '#8bc4f8',
+              yellow: '#fde2e4',  /* 馬卡龍黃/淡粉 */
+              butter: '#fff1ac',  /* 奶油黃 */
+              mint: '#b9f2e1',    /* 薄荷綠 */
+              purple: '#cdb4db',  /* 薰衣草紫 */
+              border: '#f0e6df',  /* 柔和邊框 */
+              text: '#4a3e3d',    /* 溫和深棕字體，比純黑更親和 */
+              muted: '#7d6d6b'
+            }
+          },
+          fontFamily: {
+            sans: ['Noto Sans TC', 'Fredoka', 'sans-serif'],
+            cute: ['Fredoka', 'Noto Sans TC', 'sans-serif']
+          }
+        }
+      }
+    }
+  </script>
+
+  <style>
+    body {
+      background-color: #fcf8f2;
+      color: #4a3e3d;
+      font-family: 'Noto Sans TC', 'Fredoka', sans-serif;
+      overflow-x: hidden;
+      font-size: 1.1rem; /* 全局字體加大 */
+    }
+
+    /* 可愛柔和陰影與邊框 */
+    .cute-card {
+      background-color: #ffffff;
+      border: 3px solid #f0e6df;
+      border-radius: 1.5rem;
+      box-shadow: 0 10px 25px -5px rgba(220, 190, 180, 0.25);
+    }
+    
+    .cute-btn {
+      border-radius: 1rem;
+      transition: all 0.2s ease-in-out;
+      box-shadow: 0 4px 0 0 rgba(0,0,0,0.08);
+    }
+    .cute-btn:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 6px 0 0 rgba(0,0,0,0.08);
+    }
+    .cute-btn:active {
+      transform: translateY(2px);
+      box-shadow: 0 1px 0 0 rgba(0,0,0,0.08);
+    }
+
+    /* 可愛風格螢光標籤 */
+    .tag-data { background-color: #e8f8f3; border: 2px solid #8ce8cb; color: #167a5b; }
+    .tag-interp { background-color: #eef6ff; border: 2px solid #a2d2ff; color: #1d609b; }
+    .tag-infer { background-color: #fff8e7; border: 2px solid #ffd166; color: #9c6800; }
+    .tag-unwarranted { background-color: #ffeef0; border: 2px solid #ffb7c5; color: #b82343; }
+
+    /* Custom Scrollbar */
+    ::-webkit-scrollbar { width: 8px; height: 8px; }
+    ::-webkit-scrollbar-track { background: #fcf8f2; }
+    ::-webkit-scrollbar-thumb { background: #e8dad1; border-radius: 10px; }
+    ::-webkit-scrollbar-thumb:hover { background: #d6c2b5; }
+  </style>
+</head>
+<body class="min-h-screen flex flex-col justify-between selection:bg-pink-200 selection:text-pink-900">
+
+  <!-- Top Navigation & HUD -->
+  <header class="border-b-4 border-pink-100 bg-white/90 backdrop-blur sticky top-0 z-50 px-5 py-4">
+    <div class="max-w-7xl mx-auto flex flex-wrap justify-between items-center gap-4">
+      
+      <!-- Brand & Mission Info -->
+      <div class="flex items-center gap-3">
+        <div class="w-12 h-12 rounded-2xl bg-gradient-to-br from-pink-300 to-sky-300 flex items-center justify-center text-white font-black text-2xl shadow-md">
+          <i class="fa-solid fa-magnifying-glass font-bold"></i>
+        </div>
+        <div>
+          <div class="flex items-center gap-2">
+            <span class="text-xs font-black text-pink-500 tracking-wider uppercase bg-pink-100 px-2.5 py-0.5 rounded-full">🕵️‍♀️ MISSION FILE</span>
+            <span id="badgeLevel" class="bg-amber-100 text-amber-700 text-xs font-bold px-3 py-0.5 rounded-full border border-amber-200">STAGE 0 / 5</span>
+          </div>
+          <h1 class="text-xl sm:text-2xl font-black text-cute-text tracking-tight mt-0.5">《校園解密：新聞事件背後的消失真相》</h1>
+        </div>
+      </div>
+
+      <!-- HUD Stats -->
+      <div class="flex items-center gap-4 bg-orange-50/80 px-5 py-2.5 rounded-2xl border-2 border-orange-100 text-sm font-bold">
+        <!-- Progress Bar -->
+        <div class="flex items-center gap-2">
+          <span class="text-cute-muted">破案進度:</span>
+          <div class="w-28 bg-white h-3.5 rounded-full overflow-hidden border-2 border-orange-200 p-0.5">
+            <div id="progressBar" class="bg-gradient-to-r from-pink-400 to-sky-400 h-full rounded-full w-[0%] transition-all duration-500"></div>
+          </div>
+          <span id="progressText" class="font-black text-sky-600 text-base">0%</span>
+        </div>
+
+        <div class="h-5 w-0.5 bg-orange-200"></div>
+
+        <!-- Clues Inventory Badge -->
+        <div class="flex items-center gap-2 text-amber-600 font-bold" title="搜集到的關鍵證據">
+          <i class="fa-solid fa-key text-amber-500 text-lg"></i>
+          <span>證據碎片:</span>
+          <span id="clueCount" class="font-extrabold text-amber-700 bg-amber-100 px-2.5 py-0.5 rounded-xl border border-amber-300 text-base">0 / 4</span>
+        </div>
+
+        <div class="h-5 w-0.5 bg-orange-200"></div>
+
+        <!-- Audio Toggle -->
+        <button onclick="toggleAudio()" id="audioBtn" class="text-cute-muted hover:text-cute-text transition flex items-center gap-1.5 font-bold">
+          <i class="fa-solid fa-volume-high text-pink-400 text-lg"></i>
+          <span class="hidden sm:inline text-xs">音效 ON</span>
+        </button>
+      </div>
+
+      <!-- Quick Navigation Dropdown -->
+      <div class="flex items-center gap-2">
+        <select id="stageSelect" onchange="jumpToStage(parseInt(this.value))" class="bg-white text-cute-text text-sm font-bold rounded-xl px-4 py-2.5 border-2 border-pink-200 focus:outline-none focus:border-pink-400 shadow-sm">
+          <option value="0">STAGE 0: 案件委託 (0-10m)</option>
+          <option value="1">STAGE 1: 事實解密 (10-30m)</option>
+          <option value="2">STAGE 2: 邏輯斷層 (30-40m)</option>
+          <option value="3">STAGE 3: 數學偵探 (40-70m)</option>
+          <option value="4">STAGE 4: 證據地圖 (70-90m)</option>
+          <option value="5">STAGE 5: 校長決策 (90-120m)</option>
+        </select>
+      </div>
+
+    </div>
+  </header>
+
+  <!-- MAIN GAME CONTAINER -->
+  <main class="max-w-7xl mx-auto w-full p-4 sm:p-8 flex-1 flex flex-col justify-center">
+
+    <!-- STAGE 0: PROLOGUE & ENTRY EVENT -->
+    <section id="stage-0" class="game-stage space-y-6">
+      <div class="cute-card p-6 sm:p-10 relative overflow-hidden">
+        <div class="absolute top-0 right-0 bg-pink-100 text-pink-600 text-xs font-black px-5 py-2 rounded-bl-2xl">
+          🌸 SECRET // 校務絕密委託書
+        </div>
+
+        <div class="max-w-4xl space-y-6">
+          <div class="inline-flex items-center gap-2 bg-amber-100 text-amber-800 text-sm px-4 py-1.5 rounded-full font-black">
+            <i class="fa-solid fa-lightbulb text-amber-500"></i> PBL 核心驅動問題 (Driving Question)
+          </div>
+
+          <h2 class="text-3xl sm:text-5xl font-black text-cute-text leading-tight">
+            《這篇文章說的是真的嗎？》
+          </h2>
+
+          <p class="text-cute-text text-lg sm:text-xl leading-relaxed">
+            學校正在考慮是否花費巨額預算採購全新的「數位學習方案」。校長收到了一份校園媒體報導，標題赫然寫著：<br>
+            <span class="text-pink-600 font-black text-2xl bg-pink-100 px-3 py-1 rounded-2xl border-2 border-pink-200 inline-block my-2">
+              ✨「新學習方案讓學生學習成效提升一倍！」✨
+            </span><br>
+            這篇文章包含數據、教師訪談與學生成績。但許多老師提出了質疑。校長決定將此決策委託給你們團隊，找出資料與結論之間的真正邏輯！
+          </p>
+
+          <div class="bg-amber-50/60 p-6 rounded-2xl border-2 border-amber-200/80 space-y-4">
+            <span class="text-base font-black text-amber-900 block">【第一任務：直覺判定】閱讀標題後，你的第一直覺是什麼？</span>
+            <div class="grid grid-cols-1 sm:grid-cols-3 gap-4">
+              <button onclick="recordInitialVote('trust')" class="cute-btn p-4 bg-white hover:bg-emerald-50 border-2 border-emerald-200 font-black text-base text-emerald-800 transition flex items-center justify-center gap-2">
+                <i class="fa-regular fa-circle-check text-emerald-500 text-xl"></i> □ 相信報導
+              </button>
+              <button onclick="recordInitialVote('doubt')" class="cute-btn p-4 bg-white hover:bg-rose-50 border-2 border-rose-200 font-black text-base text-rose-800 transition flex items-center justify-center gap-2">
+                <i class="fa-regular fa-circle-xmark text-rose-500 text-xl"></i> □ 不太相信
+              </button>
+              <button onclick="recordInitialVote('unknown')" class="cute-btn p-4 bg-white hover:bg-amber-50 border-2 border-amber-200 font-black text-base text-amber-800 transition flex items-center justify-center gap-2">
+                <i class="fa-regular fa-circle-question text-amber-500 text-xl"></i> □ 無法判斷
+              </button>
+            </div>
+            <div id="voteResponse" class="hidden text-sm sm:text-base font-bold text-sky-800 bg-sky-50 p-4 rounded-xl border border-sky-200">
+              <i class="fa-solid fa-heart text-pink-400 mr-2 text-lg"></i> <strong>校長的回應：</strong>「很好！記住你的第一直覺。接下來，我們必須進入卷宗，用數據與邏輯驗證你的直覺！」
+            </div>
+          </div>
+
+          <div class="pt-2 flex justify-end">
+            <button onclick="goToStage(1)" class="cute-btn px-8 py-4 bg-pink-400 hover:bg-pink-500 text-white font-black text-lg rounded-2xl transition flex items-center gap-3">
+              開啟案件卷宗 (進入 STAGE 1) <i class="fa-solid fa-arrow-right"></i>
+            </button>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- STAGE 1: LOCATE - FACT FINDER -->
+    <section id="stage-1" class="game-stage hidden space-y-6">
+      <div class="border-b-4 border-pink-100 pb-3 flex justify-between items-end">
+        <div>
+          <span class="text-xs font-black text-pink-500 uppercase tracking-wider bg-pink-100 px-3 py-1 rounded-full">STAGE 1 // 四階段閱讀：LOCATE (尋找事實)</span>
+          <h2 class="text-3xl font-black text-cute-text mt-2">關卡 1：客觀事實解密盤點</h2>
+        </div>
+        <span class="text-sm bg-sky-100 text-sky-700 px-4 py-1.5 rounded-full font-black">10–30 MIN</span>
+      </div>
+
+      <div class="grid grid-cols-1 lg:grid-cols-12 gap-6">
+        <!-- Document Viewer -->
+        <div class="lg:col-span-7 cute-card p-6 space-y-4 max-h-[600px] overflow-y-auto">
+          <div class="flex items-center justify-between border-b-2 border-gray-100 pb-3">
+            <span class="text-base font-black text-cute-text"><i class="fa-solid fa-newspaper text-pink-400 mr-2"></i> 新聞調查文本：全文卷宗</span>
+            <span class="text-xs font-bold text-cute-muted bg-gray-100 px-2.5 py-1 rounded-lg">READING FILE A-01</span>
+          </div>
+
+          <div class="text-base sm:text-lg text-cute-text space-y-4 leading-relaxed">
+            <p class="text-cute-muted italic font-bold">【文章前言】一項八週校園研究引發討論，但數據真的支持這個結論嗎？</p>
+            <p>
+              某高中在本學期進行了一項為期 <span class="bg-amber-100 text-amber-800 px-2 py-0.5 rounded-lg font-black">8 週</span> 的課堂研究。研究選擇同一年級的兩個班級進行比較。<strong class="text-pink-600 bg-pink-50 px-1 rounded">A班共有 20名學生</strong>，<strong class="text-sky-600 bg-sky-50 px-1 rounded">B班共有 80名學生</strong>。
+            </p>
+            <p>
+              兩個班級都接受原本的數學課程。不同的是，B班除了原本的課堂教學外，另外使用學校新推動的數位學習方案（每週額外 2 小時練習，任課老師亦不同）。A班則維持原本教學。
+            </p>
+            <div class="bg-emerald-50/60 p-4 rounded-2xl border-2 border-emerald-200 font-bold space-y-2 my-2 text-base">
+              <div class="text-emerald-700 font-black">▸ 8週後學習檢核通過人數：</div>
+              <div class="text-cute-text">· A班：從原本預估 20 人增加到 <span class="bg-white text-emerald-700 font-black px-2 py-0.5 rounded-lg border border-emerald-300">30人</span> 達到標準（增加 10 人）</div>
+              <div class="text-cute-text">· B班：從原本 80 人增加到 <span class="bg-white text-emerald-700 font-black px-2 py-0.5 rounded-lg border border-emerald-300">100人</span> 達到標準（增加 20 人）</div>
+            </div>
+            <p>
+              校園媒體隔天刊出標題：<span class="text-pink-600 font-black bg-pink-100 px-2 py-0.5 rounded-lg">「新學習方案讓學生學習成效提升一倍！」</span> 記者指出：B班增加 20 人是 A 班增加 10 人的兩倍！
+            </p>
+          </div>
+        </div>
+
+        <!-- Lock Control Pad -->
+        <div class="lg:col-span-5 cute-card p-6 flex flex-col justify-between space-y-6 bg-sky-50/30">
+          <div>
+            <div class="flex items-center gap-2 text-sky-600 border-b-2 border-sky-100 pb-3">
+              <i class="fa-solid fa-lock text-2xl"></i>
+              <span class="font-black text-xl text-cute-text">🔐 LOCK 01：事實數據密碼鎖</span>
+            </div>
+            <p class="text-sm text-cute-muted font-bold mt-3">請從左側文章找到正確客觀數據，並填入解鎖密碼：</p>
+
+            <div class="space-y-4 mt-5 text-sm sm:text-base font-bold">
+              <div>
+                <label class="block text-cute-text mb-1">Q1. A班「增加的達到標準人數」是多少？</label>
+                <input type="number" id="inputLock1A" placeholder="輸入數字" class="w-full bg-white border-2 border-sky-200 rounded-xl p-3 text-cute-text font-black focus:border-sky-400 focus:outline-none text-lg">
+              </div>
+
+              <div>
+                <label class="block text-cute-text mb-1">Q2. B班「增加的達到標準人數」是多少？</label>
+                <input type="number" id="inputLock1B" placeholder="輸入數字" class="w-full bg-white border-2 border-sky-200 rounded-xl p-3 text-cute-text font-black focus:border-sky-400 focus:outline-none text-lg">
+              </div>
+
+              <div>
+                <label class="block text-cute-text mb-1">Q3. 報導記者稱「B班增加人數是A班的幾倍」？</label>
+                <input type="number" id="inputLock1C" placeholder="輸入數字" class="w-full bg-white border-2 border-sky-200 rounded-xl p-3 text-cute-text font-black focus:border-sky-400 focus:outline-none text-lg">
+              </div>
+            </div>
+          </div>
+
+          <div class="space-y-3 pt-3 border-t-2 border-sky-100">
+            <button onclick="unlockStage1()" class="cute-btn w-full py-4 bg-sky-400 hover:bg-sky-500 text-white font-black text-base rounded-2xl transition flex items-center justify-center gap-2">
+              <i class="fa-solid fa-key"></i> 驗證密碼並解鎖證據 1
+            </button>
+            <div id="lock1Feedback" class="text-sm font-black text-center hidden"></div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- STAGE 2: UNDERSTAND & INFER -->
+    <section id="stage-2" class="game-stage hidden space-y-6">
+      <div class="border-b-4 border-pink-100 pb-3 flex justify-between items-end">
+        <div>
+          <span class="text-xs font-black text-amber-600 uppercase tracking-wider bg-amber-100 px-3 py-1 rounded-full">STAGE 2 // 四階段閱讀：UNDERSTAND & INFER (推論拆解)</span>
+          <h2 class="text-3xl font-black text-cute-text mt-2">關卡 2：記者推論的邏輯跳躍斷層</h2>
+        </div>
+        <span class="text-sm bg-amber-100 text-amber-800 px-4 py-1.5 rounded-full font-black">30–40 MIN</span>
+      </div>
+
+      <div class="grid grid-cols-1 lg:grid-cols-12 gap-6">
+        <!-- Deconstruction Board -->
+        <div class="lg:col-span-7 cute-card p-6 space-y-5">
+          <h3 class="text-lg font-black text-amber-800 flex items-center gap-2">
+            <i class="fa-solid fa-sitemap text-amber-500"></i> 文章推論鏈條拆解 (Logic Chain Analysis)
+          </h3>
+
+          <div class="space-y-4 text-sm sm:text-base font-bold">
+            <!-- Node 1 -->
+            <div class="bg-emerald-50 p-4 rounded-2xl border-2 border-emerald-200 flex items-start gap-3">
+              <div class="bg-emerald-200 text-emerald-800 font-black px-3 py-1 rounded-xl text-xs sm:text-sm shrink-0">1. 資料</div>
+              <div>
+                <strong class="text-emerald-900 block text-base sm:text-lg">B班增加 20人，A班增加 10人</strong>
+                <p class="text-cute-muted font-medium mt-0.5">這是客觀記錄到的數字增加量。</p>
+              </div>
+            </div>
+
+            <div class="text-center text-amber-300 text-xl"><i class="fa-solid fa-arrow-down"></i></div>
+
+            <!-- Node 2 -->
+            <div class="bg-sky-50 p-4 rounded-2xl border-2 border-sky-200 flex items-start gap-3">
+              <div class="bg-sky-200 text-sky-800 font-black px-3 py-1 rounded-xl text-xs sm:text-sm shrink-0">2. 解釋</div>
+              <div>
+                <strong class="text-sky-900 block text-base sm:text-lg">B班增加人數是 A班的 2 倍 (20 ÷ 10 = 2)</strong>
+                <p class="text-cute-muted font-medium mt-0.5">對絕對增加量的單純比較。</p>
+              </div>
+            </div>
+
+            <div class="text-center text-amber-300 text-xl"><i class="fa-solid fa-arrow-down"></i></div>
+
+            <!-- Node 3 -->
+            <div class="bg-amber-50 p-4 rounded-2xl border-2 border-amber-200 flex items-start gap-3">
+              <div class="bg-amber-200 text-amber-800 font-black px-3 py-1 rounded-xl text-xs sm:text-sm shrink-0">3. 推論</div>
+              <div>
+                <strong class="text-amber-900 block text-base sm:text-lg">記者推論：B班的「學習成長幅度」是 A班的兩倍</strong>
+                <p class="text-cute-muted font-medium mt-0.5">問題：這忽略了兩班原本的人數基準 (20人 vs 80人)！</p>
+              </div>
+            </div>
+
+            <div class="text-center text-amber-300 text-xl"><i class="fa-solid fa-arrow-down"></i></div>
+
+            <!-- Node 4 -->
+            <div class="bg-rose-50 p-4 rounded-2xl border-2 border-rose-200 flex items-start gap-3">
+              <div class="bg-rose-200 text-rose-800 font-black px-3 py-1 rounded-xl text-xs sm:text-sm shrink-0">4. 結論</div>
+              <div>
+                <strong class="text-rose-900 block text-base sm:text-lg font-black">報導標題：新學習方案讓學生學習成效提升一倍！</strong>
+                <p class="text-cute-muted font-medium mt-0.5">未經證實的因果跳躍：直接把進步歸因於數位方案。</p>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Lock Control Pad 2 -->
+        <div class="lg:col-span-5 cute-card p-6 flex flex-col justify-between space-y-6 bg-amber-50/30">
+          <div>
+            <div class="flex items-center gap-2 text-amber-600 border-b-2 border-amber-100 pb-3">
+              <i class="fa-solid fa-lock text-2xl"></i>
+              <span class="font-black text-xl text-cute-text">🔐 LOCK 02：Need-to-Know 驅動問題解鎖</span>
+            </div>
+            <p class="text-sm text-cute-muted font-bold mt-3">為了驗證這條邏輯鏈是否成立，小組需要提出哪一個關鍵探究問題 (Need-to-Know)？</p>
+
+            <div class="space-y-3 mt-5 text-sm sm:text-base font-bold">
+              <label class="block p-4 bg-white border-2 border-amber-100 hover:border-amber-300 rounded-2xl cursor-pointer transition">
+                <input type="radio" name="lock2Choice" value="A" class="mr-2 accent-pink-500">
+                A. 學校購買數位方案的金額是多少？
+              </label>
+              <label class="block p-4 bg-white border-2 border-amber-100 hover:border-amber-300 rounded-2xl cursor-pointer transition">
+                <input type="radio" name="lock2Choice" value="B" class="mr-2 accent-pink-500">
+                B. 相對兩班原本的學生人數（20人與80人），哪一班的「相對成長比例」比較高？
+              </label>
+              <label class="block p-4 bg-white border-2 border-amber-100 hover:border-amber-300 rounded-2xl cursor-pointer transition">
+                <input type="radio" name="lock2Choice" value="C" class="mr-2 accent-pink-500">
+                C. 學生每天在學校午餐吃什麼？
+              </label>
+            </div>
+          </div>
+
+          <div class="space-y-3 pt-3 border-t-2 border-amber-100">
+            <button onclick="unlockStage2()" class="cute-btn w-full py-4 bg-amber-400 hover:bg-amber-500 text-white font-black text-base rounded-2xl transition flex items-center justify-center gap-2">
+              <i class="fa-solid fa-key"></i> 提交 Need-to-Know 並解鎖證據 2
+            </button>
+            <div id="lock2Feedback" class="text-sm font-black text-center hidden"></div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- STAGE 3: MATH DETECTIVE LAB -->
+    <section id="stage-3" class="game-stage hidden space-y-6">
+      <div class="border-b-4 border-pink-100 pb-3 flex justify-between items-end">
+        <div>
+          <span class="text-xs font-black text-emerald-600 uppercase tracking-wider bg-emerald-100 px-3 py-1 rounded-full">STAGE 3 // 數學偵探任務：迷思拆解實驗室</span>
+          <h2 class="text-3xl font-black text-cute-text mt-2">關卡 3：絕對量 vs 相對量 駭客計算</h2>
+        </div>
+        <span class="text-sm bg-emerald-100 text-emerald-800 px-4 py-1.5 rounded-full font-black">40–70 MIN</span>
+      </div>
+
+      <div class="grid grid-cols-1 lg:grid-cols-12 gap-6">
+        <!-- Interactive Math Scaffolding -->
+        <div class="lg:col-span-7 cute-card p-6 space-y-5">
+          <!-- Scaffold Step 1: Visual Comparison -->
+          <div class="bg-emerald-50/60 p-5 rounded-2xl border-2 border-emerald-200 space-y-3">
+            <span class="text-base font-black text-emerald-800 block">【數學鷹架 1：相對成長率計算】</span>
+            <p class="text-sm sm:text-base text-cute-text font-bold">
+              計算公式：<span class="bg-white px-2 py-1 rounded-lg border border-emerald-300 font-black text-pink-600">(後來人數 - 原來人數) ÷ 原來人數 × 100%</span>
+            </p>
+
+            <div class="grid grid-cols-2 gap-4 pt-2 text-sm sm:text-base font-bold">
+              <div class="bg-white p-4 rounded-xl border-2 border-sky-200">
+                <span class="font-black text-sky-600 block mb-1">A 班 (原來 20 人)</span>
+                <p class="text-cute-text">(30 - 20) ÷ 20 = 10 / 20 = <strong class="text-emerald-600 text-xl font-black">50%</strong></p>
+              </div>
+              <div class="bg-white p-4 rounded-xl border-2 border-amber-200">
+                <span class="font-black text-amber-600 block mb-1">B 班 (原來 80 人)</span>
+                <p class="text-cute-text">(100 - 80) ÷ 80 = 20 / 80 = <strong class="text-emerald-600 text-xl font-black">25%</strong></p>
+              </div>
+            </div>
+          </div>
+
+          <!-- Scaffold Step 2: Extreme Case Shock (C vs D) -->
+          <div class="bg-amber-50/60 p-5 rounded-2xl border-2 border-amber-200 space-y-2 text-sm sm:text-base font-bold">
+            <span class="text-base font-black text-amber-800 block">【數學鷹架 2：小基數迷思 (C班 vs D班)】</span>
+            <div class="space-y-1 text-cute-text">
+              <p>• C班：2人 ➔ 4人，增加 2 人，相對成長 = <span class="font-black text-emerald-600 text-lg">100%</span></p>
+              <p>• D班：80人 ➔ 120人，增加 40 人，相對成長 = <span class="font-black text-amber-600 text-lg">50%</span></p>
+            </div>
+            <p class="text-cute-muted italic pt-2 border-t border-amber-200">
+              💡 震撼發現：C班只增加 2 人成長率卻高達 100%！因此不能單看成長率或單看人數！
+            </p>
+          </div>
+
+          <!-- Scaffold Step 3: Percentage vs Percentage Points -->
+          <div class="bg-sky-50/60 p-5 rounded-2xl border-2 border-sky-200 space-y-2 text-sm sm:text-base font-bold">
+            <span class="text-base font-black text-sky-800 block">【數學鷹架 3：百分比 vs 百分點】</span>
+            <p class="text-cute-text">通過率從 60% 變成 75% 時：</p>
+            <p class="text-cute-text">• 增加了 <strong class="text-amber-600 text-lg font-black">15 個百分點</strong> (75% - 60%)</p>
+            <p class="text-cute-text">• 相對成長了 <strong class="text-emerald-600 text-lg font-black">25%</strong> [(75 - 60) ÷ 60]</p>
+          </div>
+        </div>
+
+        <!-- Lock Control Pad 3 -->
+        <div class="lg:col-span-5 cute-card p-6 flex flex-col justify-between space-y-6 bg-emerald-50/30">
+          <div>
+            <div class="flex items-center gap-2 text-emerald-600 border-b-2 border-emerald-100 pb-3">
+              <i class="fa-solid fa-lock text-2xl"></i>
+              <span class="font-black text-xl text-cute-text">🔐 LOCK 03：數學雙重黑客密碼</span>
+            </div>
+
+            <div class="space-y-4 mt-5 text-sm sm:text-base font-bold">
+              <div>
+                <label class="block text-cute-text mb-1">Q1. A班的相對成長率是多少 % ？</label>
+                <div class="flex items-center gap-2">
+                  <input type="number" id="inputLock3A" placeholder="例如: 50" class="w-full bg-white border-2 border-emerald-200 rounded-xl p-3 text-cute-text font-black focus:border-emerald-400 focus:outline-none text-lg">
+                  <span class="font-black text-cute-muted text-xl">%</span>
+                </div>
+              </div>
+
+              <div>
+                <label class="block text-cute-text mb-1">Q2. B班的相對成長率是多少 % ？</label>
+                <div class="flex items-center gap-2">
+                  <input type="number" id="inputLock3B" placeholder="例如: 25" class="w-full bg-white border-2 border-emerald-200 rounded-xl p-3 text-cute-text font-black focus:border-emerald-400 focus:outline-none text-lg">
+                  <span class="font-black text-cute-muted text-xl">%</span>
+                </div>
+              </div>
+
+              <div>
+                <label class="block text-cute-text mb-1">Q3. 相對成長率比較下，哪一班比較高？</label>
+                <select id="inputLock3C" class="w-full bg-white border-2 border-emerald-200 rounded-xl p-3 text-cute-text font-black focus:border-emerald-400 focus:outline-none text-base">
+                  <option value="">-- 請選擇班級 --</option>
+                  <option value="A">A 班 (相對成長率 50%)</option>
+                  <option value="B">B 班 (相對成長率 25%)</option>
+                </select>
+              </div>
+            </div>
+          </div>
+
+          <div class="space-y-3 pt-3 border-t-2 border-emerald-100">
+            <button onclick="unlockStage3()" class="cute-btn w-full py-4 bg-emerald-400 hover:bg-emerald-500 text-white font-black text-base rounded-2xl transition flex items-center justify-center gap-2">
+              <i class="fa-solid fa-key"></i> 破解數學密碼並解鎖證據 3
+            </button>
+            <div id="lock3Feedback" class="text-sm font-black text-center hidden"></div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- STAGE 4: EVIDENCE MAPPING -->
+    <section id="stage-4" class="game-stage hidden space-y-6">
+      <div class="border-b-4 border-pink-100 pb-3 flex justify-between items-end">
+        <div>
+          <span class="text-xs font-black text-rose-600 uppercase tracking-wider bg-rose-100 px-3 py-1 rounded-full">STAGE 4 // 媒體素養：EVIDENCE MAPPING (證據地圖)</span>
+          <h2 class="text-3xl font-black text-cute-text mt-2">關卡 4：四色螢光筆分類標記</h2>
+        </div>
+        <span class="text-sm bg-rose-100 text-rose-800 px-4 py-1.5 rounded-full font-black">70–90 MIN</span>
+      </div>
+
+      <div class="grid grid-cols-1 lg:grid-cols-12 gap-6">
+        <!-- Interactive Sentence Tagging Lab -->
+        <div class="lg:col-span-7 cute-card p-6 space-y-5">
+          <div class="flex items-center justify-between border-b-2 border-gray-100 pb-3">
+            <span class="font-black text-cute-text text-base">請將下列句子正確對應到四種品質層級：</span>
+            <span class="text-xs font-bold text-rose-500 bg-rose-100 px-2.5 py-1 rounded-lg">EVIDENCE CLASSIFIER</span>
+          </div>
+
+          <!-- Color Legend -->
+          <div class="grid grid-cols-2 sm:grid-cols-4 gap-2 text-xs sm:text-sm font-black">
+            <div class="p-2.5 rounded-xl tag-data text-center">🟩 客觀資料</div>
+            <div class="p-2.5 rounded-xl tag-interp text-center">🟦 數據解釋</div>
+            <div class="p-2.5 rounded-xl tag-infer text-center">🟧 邏輯推論</div>
+            <div class="p-2.5 rounded-xl tag-unwarranted text-center">🟥 證據不足</div>
+          </div>
+
+          <div class="space-y-4 pt-2 text-sm sm:text-base font-bold">
+            <!-- Item 1 -->
+            <div class="bg-gray-50 p-4 rounded-2xl border-2 border-gray-100 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3">
+              <span class="text-cute-text">1. 「B班達到標準人數從 80人增加到 100人」</span>
+              <select id="tagChoice1" class="bg-white text-cute-text border-2 border-gray-200 rounded-xl p-2.5 focus:outline-none font-bold text-sm shrink-0">
+                <option value="">選擇標籤...</option>
+                <option value="data">🟩 客觀資料 (Data)</option>
+                <option value="interp">🟦 數據解釋 (Interpretation)</option>
+                <option value="infer">🟧 邏輯推論 (Inference)</option>
+                <option value="unwarranted">🟥 證據不足 (Unwarranted)</option>
+              </select>
+            </div>
+
+            <!-- Item 2 -->
+            <div class="bg-gray-50 p-4 rounded-2xl border-2 border-gray-100 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3">
+              <span class="text-cute-text">2. 「B班增加 20人，是 A班增加 10人的兩倍」</span>
+              <select id="tagChoice2" class="bg-white text-cute-text border-2 border-gray-200 rounded-xl p-2.5 focus:outline-none font-bold text-sm shrink-0">
+                <option value="">選擇標籤...</option>
+                <option value="data">🟩 客觀資料 (Data)</option>
+                <option value="interp">🟦 數據解釋 (Interpretation)</option>
+                <option value="infer">🟧 邏輯推論 (Inference)</option>
+                <option value="unwarranted">🟥 證據不足 (Unwarranted)</option>
+              </select>
+            </div>
+
+            <!-- Item 3 -->
+            <div class="bg-gray-50 p-4 rounded-2xl border-2 border-gray-100 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3">
+              <span class="text-cute-text">3. 「B班的學習成效成長幅度是 A班的兩倍」</span>
+              <select id="tagChoice3" class="bg-white text-cute-text border-2 border-gray-200 rounded-xl p-2.5 focus:outline-none font-bold text-sm shrink-0">
+                <option value="">選擇標籤...</option>
+                <option value="data">🟩 客觀資料 (Data)</option>
+                <option value="interp">🟦 數據解釋 (Interpretation)</option>
+                <option value="infer">🟧 邏輯推論 (Inference)</option>
+                <option value="unwarranted">🟥 證據不足 (Unwarranted)</option>
+              </select>
+            </div>
+
+            <!-- Item 4 -->
+            <div class="bg-gray-50 p-4 rounded-2xl border-2 border-gray-100 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3">
+              <span class="text-cute-text">4. 「新數位學習方案讓學習成效提升一倍！」</span>
+              <select id="tagChoice4" class="bg-white text-cute-text border-2 border-gray-200 rounded-xl p-2.5 focus:outline-none font-bold text-sm shrink-0">
+                <option value="">選擇標籤...</option>
+                <option value="data">🟩 客觀資料 (Data)</option>
+                <option value="interp">🟦 數據解釋 (Interpretation)</option>
+                <option value="infer">🟧 邏輯推論 (Inference)</option>
+                <option value="unwarranted">🟥 證據不足 (Unwarranted)</option>
+              </select>
+            </div>
+          </div>
+        </div>
+
+        <!-- Lock Control Pad 4 -->
+        <div class="lg:col-span-5 cute-card p-6 flex flex-col justify-between space-y-6 bg-pink-50/30">
+          <div>
+            <div class="flex items-center gap-2 text-pink-600 border-b-2 border-pink-100 pb-3">
+              <i class="fa-solid fa-lock text-2xl"></i>
+              <span class="font-black text-xl text-cute-text">🔐 LOCK 04：媒體邏輯總鎖</span>
+            </div>
+            <p class="text-sm text-cute-muted font-bold mt-3">完成 4 句 Evidence Mapping 正確標記，即可獲得終極決策金鑰！</p>
+            <div class="bg-white p-4 rounded-2xl border-2 border-pink-100 text-sm font-bold text-cute-text mt-4 space-y-2">
+              <p class="text-pink-600 font-black"><i class="fa-solid fa-circle-info mr-1"></i> 解鎖提示：</p>
+              <p>· 客觀資料：純粹記錄到的數據數字。</p>
+              <p>· 數據解釋：對數字做減法或倍數描述。</p>
+              <p>· 邏輯推論：嘗試詮釋數字代表的抽象意涵。</p>
+              <p>· 證據不足：直接跳到因果結論而缺乏控制變數。</p>
+            </div>
+          </div>
+
+          <div class="space-y-3 pt-3 border-t-2 border-pink-100">
+            <button onclick="unlockStage4()" class="cute-btn w-full py-4 bg-pink-400 hover:bg-pink-500 text-white font-black text-base rounded-2xl transition flex items-center justify-center gap-2">
+              <i class="fa-solid fa-key"></i> 驗證 Evidence Mapping 並獲取終極金鑰
+            </button>
+            <div id="lock4Feedback" class="text-sm font-black text-center hidden"></div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- STAGE 5: PRINCIPAL'S DECISION BRIEF -->
+    <section id="stage-5" class="game-stage hidden space-y-6">
+      <div class="border-b-4 border-pink-100 pb-3 flex justify-between items-end">
+        <div>
+          <span class="text-xs font-black text-amber-600 uppercase tracking-wider bg-amber-100 px-3 py-1 rounded-full">STAGE 5 // PBL 最終成果展示 (PUBLIC PRODUCT)</span>
+          <h2 class="text-3xl font-black text-cute-text mt-2">提交《校長決策證據卡》與終極反思</h2>
+        </div>
+        <span class="text-sm bg-amber-100 text-amber-800 px-4 py-1.5 rounded-full font-black">105–120 MIN</span>
+      </div>
+
+      <!-- Decision Card Builder -->
+      <div class="cute-card p-6 sm:p-8 space-y-6">
+        <div class="flex items-center justify-between border-b-2 border-amber-100 pb-4">
+          <div class="flex items-center gap-3">
+            <i class="fa-solid fa-clipboard-check text-amber-500 text-3xl"></i>
+            <div>
+              <h3 class="font-black text-cute-text text-xl sm:text-2xl">校務決策諮詢報告單 (Official Evidence Card)</h3>
+              <p class="text-sm text-cute-muted font-bold">請填寫最終給校長的政策建議與精準陳述</p>
+            </div>
+          </div>
+          <span class="text-xs font-black text-amber-700 bg-amber-100 border border-amber-300 px-3 py-1.5 rounded-xl">VERIFIED BY TEAM</span>
+        </div>
+
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-5 text-sm sm:text-base font-bold">
+          <!-- Item 1: Math Evidence -->
+          <div class="bg-sky-50/60 p-5 rounded-2xl border-2 border-sky-200 space-y-2">
+            <span class="font-black text-sky-700 block text-base sm:text-lg">① 核心數學證據：</span>
+            <p class="text-cute-text">
+              B班絕對人數多增加 10 人；但相對於原本人數，A班相對成長率（<strong class="text-emerald-600 font-black text-lg">50%</strong>）高於 B班（<strong class="text-amber-600 font-black text-lg">25%</strong>）。
+            </p>
+          </div>
+
+          <!-- Item 2: Reading/Media Evidence -->
+          <div class="bg-amber-50/60 p-5 rounded-2xl border-2 border-amber-200 space-y-2">
+            <span class="font-black text-amber-800 block text-base sm:text-lg">② 核心閱讀／媒體素養證據：</span>
+            <p class="text-cute-text">
+              兩班任課教師不同，且 B班每週多 2 小時課後練習，變數未受控制，無法將成效單一歸因於數位方案。
+            </p>
+          </div>
+        </div>
+
+        <!-- Policy Recommendation Choice -->
+        <div class="space-y-3 text-sm sm:text-base font-bold">
+          <label class="font-black text-cute-text text-base block">③ 如果你是校長，你會做什麼決策？（請選擇）：</label>
+          <div class="grid grid-cols-1 sm:grid-cols-3 gap-4">
+            <label class="p-4 bg-white border-2 border-gray-200 hover:border-amber-300 rounded-2xl cursor-pointer block">
+              <input type="radio" name="finalPolicy" value="full" class="mr-2 accent-pink-500"> 全面推動採購
+            </label>
+            <label class="p-4 bg-white border-2 border-gray-200 hover:border-amber-300 rounded-2xl cursor-pointer block">
+              <input type="radio" name="finalPolicy" value="pause" class="mr-2 accent-pink-500"> 暫緩推動（證據不足）
+            </label>
+            <label class="p-4 bg-amber-50 border-2 border-amber-300 hover:border-amber-400 rounded-2xl cursor-pointer block font-black text-amber-900">
+              <input type="radio" name="finalPolicy" value="test" class="mr-2 accent-pink-500" checked> ☑ 小規模繼續試驗（改善研究設計）
+            </label>
+          </div>
+        </div>
+
+        <!-- Golden Sentence Construction -->
+        <div class="bg-pink-50/60 p-5 rounded-2xl border-2 border-pink-200 space-y-2 text-sm sm:text-base font-bold">
+          <span class="text-base font-black text-pink-700 block">④ 終極陳述句 (Core Public Statement)：</span>
+          <p class="text-cute-text text-base sm:text-lg font-bold leading-relaxed">
+            「我們目前不能直接說 <u class="text-rose-600 font-black">新學習方案讓學習成效提升一倍</u>，<br>
+            但我們可以說 <u class="text-sky-700 font-black">B班達到標準人數增加，而兩班相對成長幅度與研究條件仍需要進一步檢查</u>。」
+          </p>
+        </div>
+
+        <!-- Reflection Form -->
+        <div class="border-t-2 border-gray-100 pt-5 space-y-4 text-sm sm:text-base font-bold">
+          <h4 class="font-black text-cute-text text-lg"><i class="fa-solid fa-heart text-pink-400 mr-2"></i> 115–120 分鐘：學習後設反思</h4>
+          <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div>
+              <label class="block text-cute-muted mb-2">剛開始看到報導時你的直覺是什麼？哪一個證據改變了你的想法？</label>
+              <textarea id="reflection1" rows="3" class="w-full bg-white border-2 border-gray-200 rounded-2xl p-3 text-cute-text font-bold focus:outline-none focus:border-pink-300" placeholder="寫下你的轉變..."></textarea>
+            </div>
+            <div>
+              <label class="block text-cute-muted mb-2">以後看到「增加一倍」或「大幅提升」，你第一個會問什麼？</label>
+              <textarea id="reflection2" rows="3" class="w-full bg-white border-2 border-gray-200 rounded-2xl p-3 text-cute-text font-bold focus:outline-none focus:border-pink-300" placeholder="我的第一個疑問會是..."></textarea>
+            </div>
+          </div>
+        </div>
+
+        <div class="flex justify-center pt-3">
+          <button onclick="submitFinalReport()" class="cute-btn px-10 py-5 bg-gradient-to-r from-pink-400 to-amber-400 hover:from-pink-500 hover:to-amber-500 text-white font-black text-lg sm:text-xl rounded-2xl transition flex items-center gap-3">
+            <i class="fa-solid fa-award text-2xl"></i> 簽署並向全班與校長發表報告卡！
+          </button>
+        </div>
+      </div>
+    </section>
+
+  </main>
+
+  <!-- Certificate Modal -->
+  <div id="certModal" class="fixed inset-0 bg-black/40 backdrop-blur-md z-50 hidden flex items-center justify-center p-4">
+    <div class="cute-card p-8 sm:p-10 max-w-2xl w-full text-center space-y-6 relative bg-white border-4 border-amber-300">
+      <div class="w-20 h-20 bg-amber-100 text-amber-500 rounded-full flex items-center justify-center mx-auto text-4xl border-2 border-amber-300 shadow-sm">
+        <i class="fa-solid fa-crown"></i>
+      </div>
+
+      <div>
+        <span class="text-xs font-black text-amber-600 bg-amber-100 px-3 py-1 rounded-full uppercase tracking-wider block w-fit mx-auto">PBL GOLD STANDARD MEDIA LITERACY CERTIFICATE</span>
+        <h3 class="text-3xl sm:text-4xl font-black text-cute-text mt-2">首席校園媒體偵探 證書</h3>
+      </div>
+
+      <p class="text-base sm:text-lg text-cute-text font-bold leading-relaxed max-w-lg mx-auto">
+        恭喜團隊成功破解《校園解密：新聞事件背後的消失真相》！你們不只學會了四階段閱讀、拆解了絕對量與相對量的數學迷思，更掌握了跨學科的證據地圖思維。
+      </p>
+
+      <div class="bg-amber-50/60 p-5 rounded-2xl border-2 border-amber-200 text-sm sm:text-base font-bold space-y-3 text-left">
+        <div class="flex justify-between">
+          <span class="text-cute-muted">專案達成率:</span>
+          <span class="font-black text-emerald-600">100% COMPLETE</span>
+        </div>
+        <div class="flex justify-between">
+          <span class="text-cute-muted">解鎖密碼鎖:</span>
+          <span class="font-black text-sky-600">4 / 4 ALL CLEARED</span>
+        </div>
+        <div class="flex justify-between">
+          <span class="text-cute-muted">理論對照:</span>
+          <span class="font-black text-amber-600">BIE 7 大黃金要素 100% 吻合</span>
+        </div>
+      </div>
+
+      <p class="text-base sm:text-lg font-black text-pink-600 italic">
+        「真正重要的不是數字，而是我們能不能說明：『我為什麼相信這個結論？』」
+      </p>
+
+      <div class="pt-2 flex justify-center gap-4">
+        <button onclick="closeCertModal()" class="cute-btn px-6 py-3 bg-gray-100 hover:bg-gray-200 text-cute-text font-black text-sm rounded-2xl transition">
+          關閉證書
+        </button>
+        <button onclick="window.print()" class="cute-btn px-8 py-3 bg-amber-400 hover:bg-amber-500 text-white font-black text-sm rounded-2xl transition flex items-center gap-2">
+          <i class="fa-solid fa-print"></i> 列印／儲存成果證書
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Footer -->
+  <footer class="border-t-2 border-pink-100 bg-white py-5 px-6 text-center text-xs sm:text-sm font-bold text-cute-muted">
+    <div class="max-w-7xl mx-auto flex flex-wrap justify-between items-center gap-2">
+      <span>《這篇文章說的是真的嗎？》PBL 專案導向實境解謎系統</span>
+      <span class="text-pink-400">BIE GOLD STANDARD PBL × FOUR-STAGE READING × MEDIA LITERACY</span>
+    </div>
+  </footer>
+
+  <!-- JavaScript Game Engine -->
+  <script>
+    // Game State Management
+    let currentStage = 0;
+    let cluesUnlocked = 0;
+    let audioEnabled = true;
+    let initialVote = null;
+
+    // Web Audio API Synthesizer Sound Generator
+    let audioCtx = null;
+
+    function initAudio() {
+      if (!audioCtx) {
+        audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+      }
+    }
+
+    function playSound(type) {
+      if (!audioEnabled) return;
+      initAudio();
+      if (!audioCtx) return;
+
+      const osc = audioCtx.createOscillator();
+      const gain = audioCtx.createGain();
+      osc.connect(gain);
+      gain.connect(audioCtx.destination);
+
+      const now = audioCtx.currentTime;
+
+      if (type === 'unlock') {
+        // High pleasant dual chord
+        osc.type = 'sine';
+        osc.frequency.setValueAtTime(523.25, now); // C5
+        osc.frequency.exponentialRampToValueAtTime(1046.50, now + 0.3); // C6
+        gain.gain.setValueAtTime(0.15, now);
+        gain.gain.exponentialRampToValueAtTime(0.01, now + 0.3);
+        osc.start(now);
+        osc.stop(now + 0.3);
+      } else if (type === 'error') {
+        // Low error buzz
+        osc.type = 'sawtooth';
+        osc.frequency.setValueAtTime(150, now);
+        osc.frequency.linearRampToValueAtTime(100, now + 0.2);
+        gain.gain.setValueAtTime(0.2, now);
+        gain.gain.exponentialRampToValueAtTime(0.01, now + 0.2);
+        osc.start(now);
+        osc.stop(now + 0.2);
+      } else if (type === 'click') {
+        // Subtle click
+        osc.type = 'triangle';
+        osc.frequency.setValueAtTime(800, now);
+        gain.gain.setValueAtTime(0.05, now);
+        gain.gain.exponentialRampToValueAtTime(0.001, now + 0.05);
+        osc.start(now);
+        osc.stop(now + 0.05);
+      }
+    }
+
+    function toggleAudio() {
+      audioEnabled = !audioEnabled;
+      const btn = document.getElementById('audioBtn');
+      if (audioEnabled) {
+        btn.innerHTML = `<i class="fa-solid fa-volume-high text-pink-400 text-lg"></i><span class="hidden sm:inline text-xs">音效 ON</span>`;
+      } else {
+        btn.innerHTML = `<i class="fa-solid fa-volume-xmark text-gray-400 text-lg"></i><span class="hidden sm:inline text-xs">音效 OFF</span>`;
+      }
+    }
+
+    function goToStage(stageNum) {
+      playSound('click');
+      currentStage = stageNum;
+
+      // Update Visibility of Stage Sections
+      for (let i = 0; i <= 5; i++) {
+        const sec = document.getElementById(`stage-${i}`);
+        if (sec) {
+          if (i === stageNum) {
+            sec.classList.remove('hidden');
+          } else {
+            sec.classList.add('hidden');
+          }
+        }
+      }
+
+      // Update Select Menu & HUD
+      document.getElementById('stageSelect').value = stageNum;
+      document.getElementById('badgeLevel').innerText = `STAGE ${stageNum} / 5`;
+
+      // Update Progress Bar
+      let pct = Math.round((cluesUnlocked / 4) * 100);
+      if (stageNum === 5 && cluesUnlocked === 4) pct = 100;
+      document.getElementById('progressBar').style.width = `${pct}%`;
+      document.getElementById('progressText').innerText = `${pct}%`;
+
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+    }
+
+    function jumpToStage(stageNum) {
+      goToStage(stageNum);
+    }
+
+    function recordInitialVote(type) {
+      playSound('click');
+      initialVote = type;
+      document.getElementById('voteResponse').classList.remove('hidden');
+    }
+
+    // Stage 1 Verification
+    function unlockStage1() {
+      const qA = document.getElementById('inputLock1A').value.trim();
+      const qB = document.getElementById('inputLock1B').value.trim();
+      const qC = document.getElementById('inputLock1C').value.trim();
+      const feedback = document.getElementById('lock1Feedback');
+
+      if (qA === '10' && qB === '20' && qC === '2') {
+        playSound('unlock');
+        feedback.className = "text-sm font-black text-center text-emerald-600 mt-2 block bg-emerald-100 p-2 rounded-xl";
+        feedback.innerText = "✓ 密碼正確！成功解鎖證據 1（A班加10人、B班加20人、記者稱2倍）。";
+        cluesUnlocked = Math.max(cluesUnlocked, 1);
+        updateCluesHUD();
+        setTimeout(() => goToStage(2), 1500);
+      } else {
+        playSound('error');
+        feedback.className = "text-sm font-black text-center text-rose-600 mt-2 block bg-rose-100 p-2 rounded-xl";
+        feedback.innerText = "✕ 數據輸入有誤！提示：請至左側文本確認 A班(增加10人)、B班(增加20人)。";
+      }
+    }
+
+    // Stage 2 Verification
+    function unlockStage2() {
+      const selected = document.querySelector('input[name="lock2Choice"]:checked');
+      const feedback = document.getElementById('lock2Feedback');
+
+      if (selected && selected.value === 'B') {
+        playSound('unlock');
+        feedback.className = "text-sm font-black text-center text-amber-700 mt-2 block bg-amber-100 p-2 rounded-xl";
+        feedback.innerText = "✓ 答對了！這正是啟動數學偵探任務的核心 Need-to-Know 問題！";
+        cluesUnlocked = Math.max(cluesUnlocked, 2);
+        updateCluesHUD();
+        setTimeout(() => goToStage(3), 1500);
+      } else {
+        playSound('error');
+        feedback.className = "text-sm font-black text-center text-rose-600 mt-2 block bg-rose-100 p-2 rounded-xl";
+        feedback.innerText = "✕ 思考一下，為了拆解人數與成長率的誤區，我們該問什麼問題？";
+      }
+    }
+
+    // Stage 3 Verification
+    function unlockStage3() {
+      const qA = document.getElementById('inputLock3A').value.trim();
+      const qB = document.getElementById('inputLock3B').value.trim();
+      const qC = document.getElementById('inputLock3C').value;
+      const feedback = document.getElementById('lock3Feedback');
+
+      if (qA === '50' && qB === '25' && qC === 'A') {
+        playSound('unlock');
+        feedback.className = "text-sm font-black text-center text-emerald-600 mt-2 block bg-emerald-100 p-2 rounded-xl";
+        feedback.innerText = "✓ 破解成功！A班相對成長 50% 遠大於 B班 25%！揭開媒體誇大盲點。";
+        cluesUnlocked = Math.max(cluesUnlocked, 3);
+        updateCluesHUD();
+        setTimeout(() => goToStage(4), 1500);
+      } else {
+        playSound('error');
+        feedback.className = "text-sm font-black text-center text-rose-600 mt-2 block bg-rose-100 p-2 rounded-xl";
+        feedback.innerText = "✕ 計算有誤！提示：A班 (30-20)/20 = 50%；B班 (100-80)/80 = 25%。";
+      }
+    }
+
+    // Stage 4 Verification
+    function unlockStage4() {
+      const t1 = document.getElementById('tagChoice1').value;
+      const t2 = document.getElementById('tagChoice2').value;
+      const t3 = document.getElementById('tagChoice3').value;
+      const t4 = document.getElementById('tagChoice4').value;
+      const feedback = document.getElementById('lock4Feedback');
+
+      if (t1 === 'data' && t2 === 'interp' && t3 === 'infer' && t4 === 'unwarranted') {
+        playSound('unlock');
+        feedback.className = "text-sm font-black text-center text-emerald-600 mt-2 block bg-emerald-100 p-2 rounded-xl";
+        feedback.innerText = "✓ 太棒了！完美進行 Evidence Mapping 標記！已獲取終極決策金鑰！";
+        cluesUnlocked = 4;
+        updateCluesHUD();
+        setTimeout(() => goToStage(5), 1500);
+      } else {
+        playSound('error');
+        feedback.className = "text-sm font-black text-center text-rose-600 mt-2 block bg-rose-100 p-2 rounded-xl";
+        feedback.innerText = "✕ 標記尚未完全正確！對照提示再確認：1=客觀資料, 2=數據解釋, 3=邏輯推論, 4=證據不足。";
+      }
+    }
+
+    function updateCluesHUD() {
+      document.getElementById('clueCount').innerText = `${cluesUnlocked} / 4`;
+      let pct = Math.round((cluesUnlocked / 4) * 100);
+      document.getElementById('progressBar').style.width = `${pct}%`;
+      document.getElementById('progressText').innerText = `${pct}%`;
+    }
+
+    function submitFinalReport() {
+      playSound('unlock');
+      document.getElementById('certModal').classList.remove('hidden');
+    }
+
+    function closeCertModal() {
+      document.getElementById('certModal').classList.add('hidden');
+    }
+
+    // Keyboard navigation
+    document.addEventListener('keydown', function(e) {
+      if (e.key === 'ArrowRight' && currentStage < 5) {
+        goToStage(currentStage + 1);
+      } else if (e.key === 'ArrowLeft' && currentStage > 0) {
+        goToStage(currentStage - 1);
+      }
+    });
+
+    window.onload = function() {
+      goToStage(0);
+    };
+  </script>
+</body>
+</html>

@@ -1,0 +1,1127 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>升遷疑雲：性平機率密室解謎</title>
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- FontAwesome Icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <!-- Google Fonts -->
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;700&family=JetBrains+Mono:wght@400;700&display=swap" rel="stylesheet">
+    <!-- KaTeX CSS & JS for Math Rendering -->
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.8/dist/katex.min.css">
+    <script src="https://cdn.jsdelivr.net/npm/katex@0.16.8/dist/katex.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/katex@0.16.8/dist/contrib/auto-render.min.js"></script>
+
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    fontFamily: {
+                        sans: ['Inter', 'sans-serif'],
+                        mono: ['JetBrains Mono', 'monospace'],
+                    },
+                    colors: {
+                        cyber: {
+                            dark: '#0f172a',
+                            panel: '#1e293b',
+                            accent: '#06b6d4',
+                            warning: '#f59e0b',
+                            success: '#10b981',
+                            danger: '#ef4444'
+                        }
+                    }
+                }
+            }
+        }
+    </script>
+    <style>
+        body {
+            background-color: #080d1a;
+            color: #f8fafc;
+        }
+        .glow-accent {
+            box-shadow: 0 0 15px rgba(6, 182, 212, 0.3);
+        }
+        .glow-danger {
+            box-shadow: 0 0 15px rgba(239, 68, 68, 0.3);
+        }
+        .glow-success {
+            box-shadow: 0 0 15px rgba(16, 185, 129, 0.3);
+        }
+        .terminal-text {
+            text-shadow: 0 0 5px rgba(6, 182, 212, 0.5);
+        }
+        /* Custom scrollbar */
+        ::-webkit-scrollbar {
+            width: 6px;
+        }
+        ::-webkit-scrollbar-track {
+            background: #0f172a;
+        }
+        ::-webkit-scrollbar-thumb {
+            background: #334155;
+            border-radius: 3px;
+        }
+        ::-webkit-scrollbar-thumb:hover {
+            background: #06b6d4;
+        }
+        .chat-bubble-left {
+            position: relative;
+            background: #1e293b;
+            border-radius: 0.75rem;
+            border-top-left-radius: 0.1rem;
+        }
+        .chat-bubble-right {
+            position: relative;
+            background: #0e3f52;
+            border-radius: 0.75rem;
+            border-top-right-radius: 0.1rem;
+        }
+    </style>
+</head>
+<body class="min-h-screen flex flex-col font-sans antialiased selection:bg-cyan-500 selection:text-slate-900">
+
+    <!-- Header Navigation -->
+    <header class="border-b border-slate-800 bg-slate-900/90 backdrop-blur sticky top-0 z-30">
+        <div class="max-w-7xl mx-auto px-4 py-3 flex items-center justify-between">
+            <div class="flex items-center space-x-3">
+                <div class="p-2 bg-cyan-500/10 border border-cyan-500/30 rounded-lg text-cyan-400">
+                    <i class="fa-solid fa-user-shield text-xl"></i>
+                </div>
+                <div>
+                    <h1 class="text-lg font-bold tracking-wide text-cyan-400 font-mono">性平調查局：巨頭科技專案</h1>
+                    <p class="text-xs text-slate-400">調查員卡特探案記錄 × UbD 機率推理與職場平權</p>
+                </div>
+            </div>
+
+            <!-- Progress Tracker -->
+            <div class="hidden md:flex items-center space-x-6">
+                <div class="flex items-center space-x-2 text-sm">
+                    <span class="text-slate-400">當前關卡:</span>
+                    <span id="stage-badge" class="px-2.5 py-0.5 rounded-full text-xs font-mono font-bold bg-cyan-500/20 text-cyan-300 border border-cyan-500/40">
+                        STAGE 1
+                    </span>
+                </div>
+                <div class="w-32 bg-slate-800 rounded-full h-2 overflow-hidden border border-slate-700">
+                    <div id="progress-bar" class="bg-gradient-to-r from-cyan-500 to-emerald-400 h-full w-1/3 transition-all duration-500"></div>
+                </div>
+            </div>
+
+            <!-- Hint & Story Controls -->
+            <div class="flex items-center space-x-2">
+                <button onclick="toggleStoryLogModal()" class="px-3 py-1.5 bg-cyan-500/10 border border-cyan-500/30 hover:bg-cyan-500/20 text-cyan-400 rounded-lg text-xs font-semibold flex items-center gap-1.5 transition">
+                    <i class="fa-solid fa-scroll"></i>
+                    <span>完整案件檔案</span>
+                </button>
+                <button onclick="toggleHintModal()" class="px-3 py-1.5 bg-amber-500/10 border border-amber-500/30 hover:bg-amber-500/20 text-amber-400 rounded-lg text-xs font-semibold flex items-center gap-1.5 transition">
+                    <i class="fa-regular fa-lightbulb"></i>
+                    <span>偵查提示</span>
+                </button>
+            </div>
+        </div>
+    </header>
+
+    <!-- Main Game Container -->
+    <main class="flex-1 max-w-7xl w-full mx-auto p-4 md:p-6 grid grid-cols-1 lg:grid-cols-12 gap-6">
+
+        <!-- Left Column: Story Terminal & Evidence (6 cols) -->
+        <section class="lg:col-span-6 flex flex-col space-y-4">
+            
+            <!-- Room Narrative Banner & Cutscene Dialog -->
+            <div id="narrative-card" class="bg-slate-900/90 border border-slate-800 rounded-xl p-5 shadow-xl relative overflow-hidden">
+                <div class="absolute -right-10 -bottom-10 opacity-5 pointer-events-none">
+                    <i class="fa-solid fa-door-closed text-9xl"></i>
+                </div>
+                <div class="flex items-start justify-between mb-2">
+                    <span class="text-xs font-mono text-cyan-400 tracking-wider uppercase font-semibold">
+                        <i class="fa-solid fa-building-user mr-1"></i>巨頭科技資深人資室 19:42 PM
+                    </span>
+                    <span id="timer-display" class="text-xs font-mono bg-slate-800 px-2.5 py-1 rounded text-slate-300"><i class="fa-regular fa-clock mr-1.5"></i>00:00</span>
+                </div>
+                <h2 id="stage-title" class="text-xl font-bold text-slate-100 mb-2">【案發】封鎖的人資辦公室</h2>
+                <p id="stage-description" class="text-sm text-slate-300 leading-relaxed">
+                    你（調查員卡特）收到匿名舉報信，暗中進入巨頭科技公司人資總監室搜證。就在你找到第一份檔案時，辦公室電子防盜門突然鎖死！螢幕跳出安全警報，你必須操作中央伺服器，用「數據真相」解開密碼鎖逃生！
+                </p>
+            </div>
+
+            <!-- Whistleblower Encrypted Chat Log (Interactive Narrative Element) -->
+            <div class="bg-slate-900/90 border border-slate-800 rounded-xl p-4 flex flex-col shadow-xl">
+                <div class="flex items-center justify-between pb-2 mb-3 border-b border-slate-800">
+                    <div class="flex items-center gap-2">
+                        <span class="w-2.5 h-2.5 rounded-full bg-emerald-400 animate-pulse"></span>
+                        <h3 class="text-xs font-mono font-bold text-slate-200">暗號頻道 [吹哨者: 零點] 實時聯絡</h3>
+                    </div>
+                    <span class="text-[10px] text-slate-500 font-mono">加密連線中</span>
+                </div>
+
+                <div id="chat-stream" class="space-y-3 max-h-48 overflow-y-auto p-2 rounded bg-slate-950/70 border border-slate-800/80 font-mono text-xs">
+                    <!-- Dynamic chat messages inserted here -->
+                </div>
+            </div>
+
+            <!-- Interactive Clue Desk / Folder -->
+            <div class="bg-slate-900/90 border border-slate-800 rounded-xl p-5 flex-1 flex flex-col shadow-xl">
+                <div class="flex items-center justify-between pb-3 mb-4 border-b border-slate-800">
+                    <h3 class="text-sm font-bold text-slate-200 flex items-center gap-2">
+                        <i class="fa-solid fa-folder-open text-cyan-400"></i>
+                        <span>搜集到的機密證物（點擊閱讀故事檔案）</span>
+                    </h3>
+                    <span class="text-xs text-slate-400" id="clue-count">已取得 1 / 3 個證物</span>
+                </div>
+
+                <!-- Clue Grid -->
+                <div class="grid grid-cols-1 md:grid-cols-3 gap-3 flex-1" id="clue-grid">
+                    
+                    <!-- Clue Item 1 -->
+                    <div onclick="openDocumentModal(1)" id="clue-card-1" class="cursor-pointer bg-slate-800/80 hover:bg-slate-800 border border-cyan-500/40 rounded-lg p-4 transition group flex flex-col justify-between glow-accent">
+                        <div>
+                            <div class="flex justify-between items-center mb-2">
+                                <span class="text-xs font-mono text-cyan-400">證物 A</span>
+                                <i class="fa-solid fa-file-contract text-cyan-400"></i>
+                            </div>
+                            <h4 class="text-sm font-semibold text-slate-100 group-hover:text-cyan-300 transition">全體升遷統計雙向表</h4>
+                            <p class="text-xs text-slate-400 mt-1 line-clamp-2">附帶匿名舉報信：200人升遷統計數值...</p>
+                        </div>
+                        <span class="text-[10px] text-cyan-400 font-mono mt-3 inline-block"><i class="fa-solid fa-magnifying-glass mr-1"></i>閱讀密件內容</span>
+                    </div>
+
+                    <!-- Clue Item 2 (Locked initial) -->
+                    <div id="clue-card-2" class="opacity-50 bg-slate-900 border border-slate-800 rounded-lg p-4 flex flex-col justify-between cursor-not-allowed">
+                        <div>
+                            <div class="flex justify-between items-center mb-2">
+                                <span class="text-xs font-mono text-slate-500">證物 B</span>
+                                <i class="fa-solid fa-lock text-slate-600"></i>
+                            </div>
+                            <h4 class="text-sm font-semibold text-slate-500">主管群 Slack 對話截圖</h4>
+                            <p class="text-xs text-slate-600 mt-1">破解 STAGE 1 後取得解密金鑰...</p>
+                        </div>
+                        <span class="text-[10px] text-slate-600 font-mono mt-3 inline-block">未解鎖</span>
+                    </div>
+
+                    <!-- Clue Item 3 (Locked initial) -->
+                    <div id="clue-card-3" class="opacity-50 bg-slate-900 border border-slate-800 rounded-lg p-4 flex flex-col justify-between cursor-not-allowed">
+                        <div>
+                            <div class="flex justify-between items-center mb-2">
+                                <span class="text-xs font-mono text-slate-500">證物 C</span>
+                                <i class="fa-solid fa-lock text-slate-600"></i>
+                            </div>
+                            <h4 class="text-sm font-semibold text-slate-500">部門分流黑箱紀錄</h4>
+                            <p class="text-xs text-slate-600 mt-1">破解 STAGE 2 後開啟保險箱...</p>
+                        </div>
+                        <span class="text-[10px] text-slate-600 font-mono mt-3 inline-block">未解鎖</span>
+                    </div>
+
+                </div>
+            </div>
+
+        </section>
+
+        <!-- Right Column: Interactive Controls & Verification Console (6 cols) -->
+        <section class="lg:col-span-6 flex flex-col space-y-4">
+            
+            <!-- Terminal Control Console Container -->
+            <div class="bg-slate-900 border border-slate-800 rounded-xl p-5 shadow-xl flex-1 flex flex-col justify-between">
+                
+                <div>
+                    <!-- Console Header -->
+                    <div class="bg-slate-950 border border-slate-800 rounded-lg p-4 mb-4">
+                        <div class="flex items-center justify-between border-b border-slate-800 pb-2 mb-3">
+                            <div class="flex items-center space-x-2">
+                                <span class="w-2.5 h-2.5 rounded-full bg-red-500"></span>
+                                <span class="w-2.5 h-2.5 rounded-full bg-amber-500"></span>
+                                <span class="w-2.5 h-2.5 rounded-full bg-emerald-500"></span>
+                                <span class="text-xs font-mono text-slate-400 ml-2">SECURITY_TERMINAL_v4.1</span>
+                            </div>
+                            <span id="lock-status" class="text-xs font-mono text-amber-400 font-bold"><i class="fa-solid fa-lock mr-1"></i>LOCKED</span>
+                        </div>
+
+                        <!-- Instruction Prompt -->
+                    <!-- Prompt Instruction -->
+                    <p id="terminal-prompt" class="text-xs text-cyan-300 font-mono terminal-text">
+                        > 系統驗證指令：點擊【證物 A】閱讀「文字轉數學指南」，將題意轉化為條件機率算式並計算，校正伺服器天平。
+                    </p>
+                </div>
+
+                <!-- Dynamic Puzzle Mechanism Mount Point -->
+                    <div id="puzzle-mechanism-container" class="bg-slate-950/60 border border-slate-800 rounded-xl p-4 mb-4">
+                        <!-- Content rendered dynamically per stage -->
+                    </div>
+                </div>
+
+                <!-- Feedback Toast Box -->
+                <div id="feedback-message" class="p-3 bg-slate-800/80 border border-slate-700 rounded-lg text-xs font-mono text-slate-300 min-h-[50px] flex items-center justify-center text-center">
+                    提示：請先點擊左側「證物 A」檢視舉報信與全體員工升遷數據。
+                </div>
+
+            </div>
+
+        </section>
+
+    </main>
+
+    <!-- Document View Modal -->
+    <div id="doc-modal" class="fixed inset-0 bg-slate-950/85 backdrop-blur-sm z-50 flex items-center justify-center p-4 hidden">
+        <div class="bg-slate-900 border border-slate-700 rounded-xl max-w-2xl w-full p-6 shadow-2xl relative max-h-[90vh] overflow-y-auto">
+            
+            <button onclick="closeDocumentModal()" class="absolute top-4 right-4 text-slate-400 hover:text-slate-100 text-lg">
+                <i class="fa-solid fa-xmark"></i>
+            </button>
+
+            <div id="doc-modal-content">
+                <!-- Content dynamically populated by JS -->
+            </div>
+
+            <div class="mt-6 flex justify-end">
+                <button onclick="closeDocumentModal()" class="px-4 py-2 bg-slate-800 hover:bg-slate-700 text-slate-200 rounded-lg text-xs font-semibold">
+                    返回調查桌
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Story Log Modal -->
+    <div id="story-modal" class="fixed inset-0 bg-slate-950/85 backdrop-blur-sm z-50 flex items-center justify-center p-4 hidden">
+        <div class="bg-slate-900 border border-cyan-500/40 rounded-xl max-w-2xl w-full p-6 shadow-2xl relative max-h-[90vh] overflow-y-auto">
+            <button onclick="toggleStoryLogModal()" class="absolute top-4 right-4 text-slate-400 hover:text-slate-100 text-lg">
+                <i class="fa-solid fa-xmark"></i>
+            </button>
+            <h3 class="text-lg font-bold text-cyan-400 flex items-center gap-2 mb-3">
+                <i class="fa-solid fa-book-open"></i>
+                <span>案件完整背景與情節簡報</span>
+            </h3>
+            <div class="text-xs text-slate-300 leading-relaxed space-y-3 font-mono border-t border-slate-800 pt-3">
+                <p class="text-amber-300 font-bold">【背景簡介】</p>
+                <p>科技業巨頭「MegaCorp」近日宣稱獲得『最佳性別友善企業獎』。然而，調查局收到內部吹哨者「零點」的匿名舉報，稱公司高層在升遷評選中存在性別不對等，並透過統計數據包裝掩蓋真相。</p>
+
+                <p class="text-amber-300 font-bold">【任務目標】</p>
+                <p>身為調查員的你，必須破解人資總監室內的各級防護密碼，藉由數學條件機率、獨立性檢驗與辛普森悖論，揭開真實的結構問題，完成調查報告並脫困！</p>
+            </div>
+            <div class="mt-5 text-right">
+                <button onclick="toggleStoryLogModal()" class="px-4 py-2 bg-cyan-500/20 hover:bg-cyan-500/30 text-cyan-300 rounded-lg text-xs font-semibold">
+                    繼續調查
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Hint Modal -->
+    <div id="hint-modal" class="fixed inset-0 bg-slate-950/85 backdrop-blur-sm z-50 flex items-center justify-center p-4 hidden">
+        <div class="bg-slate-900 border border-amber-500/40 rounded-xl max-w-md w-full p-6 shadow-2xl relative">
+            <button onclick="toggleHintModal()" class="absolute top-4 right-4 text-slate-400 hover:text-slate-100 text-lg">
+                <i class="fa-solid fa-xmark"></i>
+            </button>
+            <h3 class="text-lg font-bold text-amber-400 flex items-center gap-2 mb-3">
+                <i class="fa-regular fa-lightbulb"></i>
+                <span>UbD 解謎提示與思考觀念</span>
+            </h3>
+            <div id="hint-modal-text" class="text-sm text-slate-300 leading-relaxed space-y-3">
+                <!-- Hint populated by stage -->
+            </div>
+            <div class="mt-5 text-right">
+                <button onclick="toggleHintModal()" class="px-4 py-2 bg-amber-500/20 hover:bg-amber-500/30 text-amber-300 rounded-lg text-xs font-semibold">
+                    知道了
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Cutscene Interstitial Modal (Story transitions) -->
+    <div id="cutscene-modal" class="fixed inset-0 bg-slate-950/90 backdrop-blur-md z-50 flex items-center justify-center p-4 hidden">
+        <div class="bg-slate-900 border border-cyan-500/50 rounded-2xl max-w-xl w-full p-6 shadow-2xl relative glow-accent">
+            <div class="flex items-center space-x-3 pb-3 border-b border-slate-800 mb-4">
+                <div class="p-2 bg-cyan-500/20 rounded-lg text-cyan-400">
+                    <i class="fa-solid fa-shield-halved text-2xl"></i>
+                </div>
+                <div>
+                    <h3 id="cutscene-title" class="text-base font-bold text-slate-100">【劇情推進】警報暫緩！第一重門鎖解開</h3>
+                    <p class="text-xs text-slate-400 font-mono">調查通訊系統即時記錄</p>
+                </div>
+            </div>
+
+            <div id="cutscene-body" class="space-y-3 text-xs text-slate-300 font-mono leading-relaxed bg-slate-950 p-4 rounded-xl border border-slate-800 max-h-60 overflow-y-auto">
+                <!-- Populated dynamically -->
+            </div>
+
+            <div class="mt-5 text-right">
+                <button onclick="closeCutsceneModal()" class="px-5 py-2.5 bg-cyan-500 hover:bg-cyan-400 text-slate-950 rounded-lg text-xs font-bold font-mono transition glow-accent">
+                    前往下一關卡 <i class="fa-solid fa-arrow-right ml-1"></i>
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Victory Debrief Modal (UbD Reflection & Story Finale) -->
+    <div id="victory-modal" class="fixed inset-0 bg-slate-950/90 backdrop-blur-md z-50 flex items-center justify-center p-4 hidden">
+        <div class="bg-slate-900 border border-emerald-500/50 rounded-2xl max-w-3xl w-full p-6 md:p-8 shadow-2xl relative max-h-[90vh] overflow-y-auto glow-success">
+            
+            <div class="text-center mb-6">
+                <div class="w-16 h-16 bg-emerald-500/20 border border-emerald-500/40 text-emerald-400 rounded-full flex items-center justify-center mx-auto mb-3 text-3xl">
+                    <i class="fa-solid fa-unlock"></i>
+                </div>
+                <h2 class="text-2xl font-bold text-slate-100">大門解鎖！性平調查報告完成！</h2>
+                <p class="text-xs font-mono text-emerald-400 mt-1">成功帶出機密資料，揭開巨頭科技的統計迷思</p>
+            </div>
+
+            <!-- Story Epilogue -->
+            <div class="mb-5 bg-slate-950 p-4 rounded-xl border border-slate-800 text-xs font-mono text-slate-300 space-y-2">
+                <p class="text-cyan-400 font-bold"><i class="fa-solid fa-clapperboard mr-1.5"></i>【案件結局】真相大白</p>
+                <p>你帶著完整的數據報告離開人資辦公室，並將報告提交給性平會。巨頭科技總裁原先聲稱「公司男女性總升遷率相差三倍是女性個人職涯選擇所致」，但在你出示了**「部門控制變因數據（辛普森悖論）」**後，證實了：</p>
+                <p class="text-amber-300">「公司並非在評選直接扣分，而是長年將 80% 的女性新進員工指派至升遷名額極少的行政部，造成結構性的升遷天花板！」</p>
+            </div>
+
+            <!-- UbD Reflection Content -->
+            <div class="space-y-4 text-sm text-slate-300 bg-slate-950 p-5 rounded-xl border border-slate-800">
+                <h3 class="font-bold text-cyan-400 border-b border-slate-800 pb-2 flex items-center gap-2">
+                    <i class="fa-solid fa-graduation-cap"></i>
+                    <span>UbD 重理解學習心得總覽</span>
+                </h3>
+
+                <div class="space-y-3">
+                    <div>
+                        <h4 class="font-semibold text-amber-300">1. 條件機率的本質 $\left(P(A|B)\right)$</h4>
+                        <p class="text-xs text-slate-400 mt-0.5">
+                            條件機率改變了「樣本空間」。單看總體升遷率無法反映群體間的真實差異，限定在「男性」或「女性」分母下，能更精準觀察結構上的不對稱。
+                        </p>
+                    </div>
+
+                    <div>
+                        <h4 class="font-semibold text-amber-300">2. 事件獨立性的定義 $\left(P(A \cap B) = P(A) \times P(B)\right)$</h4>
+                        <p class="text-xs text-slate-400 mt-0.5">
+                            數學上「獨立」代表性別不應改變升遷發生的機率。當 $0.15 \neq 0.10$ 時，明確證明了性別與升遷結果並非獨立。
+                        </p>
+                    </div>
+
+                    <div>
+                        <h4 class="font-semibold text-amber-300">3. 辛普森悖論與控制變因 (Simpson's Paradox)</h4>
+                        <p class="text-xs text-slate-400 mt-0.5">
+                            在第三關中，我們發現技術部與行政部內部男女性升遷率完全相同（技術部皆為 35%，行政部皆為 10%）。總體升遷率差距是因為 80% 的女性被集中在升遷率較低的行政部。這提醒我們：**解讀統計數據時，必須加入正確控制變因，區分是直接歧視，還是職務分流引發的結構問題。**
+                        </p>
+                    </div>
+                </div>
+            </div>
+
+            <div class="mt-6 flex flex-col sm:flex-row gap-3 justify-end">
+                <button onclick="restartGame()" class="px-5 py-2.5 bg-slate-800 hover:bg-slate-700 text-slate-200 rounded-lg text-xs font-semibold transition">
+                    重新挑戰案情
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Game State Variables
+        let currentStage = 1;
+        let secondsElapsed = 0;
+        let timerInterval = null;
+
+        // Stage 1 State Inputs
+        let stage1MaleRate = 0;
+        let stage1FemaleRate = 0;
+
+        // Stage 2 State Inputs
+        let stage2Intersect = "0.05";
+        let stage2Product = "0.05";
+        let stage2Symbol = "=";
+
+        // Stage 3 State Inputs
+        let stage3TechRate = 0;
+        let stage3Diagnosis = "";
+
+        // Story Chat Messages History
+        const chatLogs = {
+            1: [
+                { sender: "零點", type: "left", text: "卡特探員！你進去人資辦公室了嗎？他們剛發現有人翻動檔案，防盜門被自動鎖上了！" },
+                { sender: "調查員卡特", type: "right", text: "收到。我被困在裡面了，伺服器終端需要輸入數據校正密碼才能解鎖。" },
+                { sender: "零點", type: "left", text: "快看桌面上的【證物 A】！高層一直宣稱男女升遷很公平，但雙向表裡的條件機率有問題，快求出正確數值！" }
+            ],
+            2: [
+                { sender: "零點", type: "left", text: "太棒了！第一重密碼解開了！但伺服器的防火牆要求進行「獨立性數學驗證」。" },
+                { sender: "調查員卡特", type: "right", text: "人資主管宣稱性別與升遷完全獨立、互不影響。這是真的嗎？" },
+                { sender: "零點", type: "left", text: "我剛剛截獲了主管 Slack 對話【證物 B】！人用 P(A ∩ B) 與 P(A)×P(B) 比對，就能撕下他們的假面具！" }
+            ],
+            3: [
+                { sender: "零點", type: "left", text: "警報聲越來越近了！只剩下最後保險箱的控制關卡！" },
+                { sender: "調查員卡特", type: "right", text: "人資總監剛剛傳來聲明，說總體數據的差異是因為「部門特性分流」，不是歧視。" },
+                { sender: "零點", type: "left", text: "打開保險箱裡的【證物 C】！計算技術部女性升遷率，用「辛普森悖論」給他們致命一擊！" }
+            ]
+        };
+
+        // Audio Synth using Web Audio API
+        const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+        
+        function playSound(freq = 440, type = 'sine', duration = 0.1) {
+            try {
+                if (audioCtx.state === 'suspended') audioCtx.resume();
+                const osc = audioCtx.createOscillator();
+                const gain = audioCtx.createGain();
+                osc.type = type;
+                osc.frequency.value = freq;
+                gain.gain.setValueAtTime(0.05, audioCtx.currentTime);
+                gain.gain.exponentialRampToValueAtTime(0.0001, audioCtx.currentTime + duration);
+                osc.connect(gain);
+                gain.connect(audioCtx.destination);
+                osc.start();
+                osc.stop(audioCtx.currentTime + duration);
+            } catch (e) {}
+        }
+
+        // Render Math equations with KaTeX
+        function triggerMathRender() {
+            setTimeout(() => {
+                if (window.renderMathInElement) {
+                    renderMathInElement(document.body, {
+                        delimiters: [
+                            {left: '$$', right: '$$', display: true},
+                            {left: '$', right: '$', display: false}
+                        ],
+                        throwOnError: false
+                    });
+                }
+            }, 50);
+        }
+
+        // Timer Function
+        function startTimer() {
+            clearInterval(timerInterval);
+            timerInterval = setInterval(() => {
+                secondsElapsed++;
+                const mins = String(Math.floor(secondsElapsed / 60)).padStart(2, '0');
+                const secs = String(secondsElapsed % 60).padStart(2, '0');
+                document.getElementById('timer-display').innerHTML = `<i class="fa-regular fa-clock mr-1.5"></i>${mins}:${secs}`;
+            }, 1000);
+        }
+
+        function setFeedback(msg, isError = false, isSuccess = false) {
+            const fb = document.getElementById('feedback-message');
+            fb.innerText = msg;
+            fb.className = "p-3 border rounded-lg text-xs font-mono min-h-[50px] flex items-center justify-center text-center transition-all duration-300 ";
+            
+            if (isError) {
+                fb.className += "bg-rose-500/10 border-rose-500/40 text-rose-300 glow-danger";
+                playSound(200, 'sawtooth', 0.25);
+            } else if (isSuccess) {
+                fb.className += "bg-emerald-500/10 border-emerald-500/40 text-emerald-300 glow-success";
+                playSound(880, 'sine', 0.3);
+            } else {
+                fb.className += "bg-slate-800/80 border-slate-700 text-slate-300";
+            }
+        }
+
+        function renderChatStream(stage) {
+            const container = document.getElementById('chat-stream');
+            if (!container) return;
+            const messages = chatLogs[stage] || [];
+            
+            container.innerHTML = messages.map(m => `
+                <div class="flex flex-col ${m.type === 'right' ? 'items-end' : 'items-start'}">
+                    <span class="text-[10px] text-slate-400 mb-0.5">${m.sender}</span>
+                    <div class="px-3 py-1.5 max-w-[85%] ${m.type === 'right' ? 'chat-bubble-right text-cyan-200 border border-cyan-700/50' : 'chat-bubble-left text-slate-200 border border-slate-700/60'}">
+                        ${m.text}
+                    </div>
+                </div>
+            `).join('');
+
+            container.scrollTop = container.scrollHeight;
+        }
+
+        // Render Puzzle Mechanism UI based on stage
+        function renderMechanism() {
+            const container = document.getElementById('puzzle-mechanism-container');
+
+            if (currentStage === 1) {
+                container.innerHTML = `
+                    <div class="space-y-4">
+                        <div class="flex items-center justify-between text-xs font-mono text-cyan-300 border-b border-slate-800 pb-2">
+                            <span><i class="fa-solid fa-scale-balanced mr-1"></i>裝置 1：男性與女性條件升遷率校正器</span>
+                            <span class="text-slate-400">請輸入由雙向表計算出的百分比</span>
+                        </div>
+
+                        <!-- Step-by-Step Mini Helper Card -->
+                        <div class="bg-slate-900/90 border border-slate-800 rounded-lg p-3 text-xs font-mono space-y-1 text-slate-300">
+                            <div class="text-amber-400 font-bold text-[11px] flex items-center gap-1">
+                                <i class="fa-solid fa-shoe-prints text-xs"></i> 解謎三步驟提示：
+                            </div>
+                            <p class="text-[11px] text-slate-400">1. 從【證物 A】找出男性總數 $n(B)$（分母）與升遷人數 $n(A \cap B)$（分子）。</p>
+                            <p class="text-[11px] text-slate-400">2. 計算男性條件機率 $P(A|B) = \frac{\text{男性升遷}}{\text{男性總數}} \times 100\%$ 並拖動藍色滑桿。</p>
+                            <p class="text-[11px] text-slate-400">3. 同理計算女性條件機率 $P(A|B')$ 並拖動紫色滑桿。</p>
+                        </div>
+
+                        <!-- Male Slider -->
+                        <div class="bg-slate-900 p-3 rounded-lg border border-slate-800">
+                            <div class="flex justify-between items-center text-xs mb-1 font-mono">
+                                <span class="text-cyan-400 font-semibold">男性條件升遷率 $P(A|B)$:</span>
+                                <span id="val-male-rate" class="text-cyan-300 font-bold text-sm">0%</span>
+                            </div>
+                            <input type="range" min="0" max="100" value="${stage1MaleRate}" step="5" oninput="updateStage1Male(this.value)" class="w-full accent-cyan-400 h-1.5 bg-slate-800 rounded-lg cursor-pointer">
+                        </div>
+
+                        <!-- Female Slider -->
+                        <div class="bg-slate-900 p-3 rounded-lg border border-slate-800">
+                            <div class="flex justify-between items-center text-xs mb-1 font-mono">
+                                <span class="text-purple-400 font-semibold">女性條件升遷率 $P(A|B')$:</span>
+                                <span id="val-female-rate" class="text-purple-300 font-bold text-sm">0%</span>
+                            </div>
+                            <input type="range" min="0" max="100" value="${stage1FemaleRate}" step="5" oninput="updateStage1Female(this.value)" class="w-full accent-purple-400 h-1.5 bg-slate-800 rounded-lg cursor-pointer">
+                        </div>
+
+                        <button onclick="submitStage1()" class="w-full py-2.5 bg-cyan-600 hover:bg-cyan-500 text-slate-950 font-mono text-xs font-bold rounded-lg transition shadow glow-accent flex items-center justify-center gap-2">
+                            <i class="fa-solid fa-bolt"></i>
+                            <span>校正升遷率天平並解鎖</span>
+                        </button>
+                    </div>
+                `;
+                updateStage1Male(stage1MaleRate);
+                updateStage1Female(stage1FemaleRate);
+
+            } else if (currentStage === 2) {
+                container.innerHTML = `
+                    <div class="space-y-4">
+                        <div class="flex items-center justify-between text-xs font-mono text-cyan-300 border-b border-slate-800 pb-2">
+                            <span><i class="fa-solid fa-microchip mr-1"></i>裝置 2：獨立事件邏輯判定電路</span>
+                            <span class="text-slate-400">請填入計算出的機率值與關係</span>
+                        </div>
+
+                        <div class="bg-slate-900/90 border border-slate-800 rounded-lg p-3 text-xs font-mono space-y-1 text-slate-300">
+                            <div class="text-amber-400 font-bold text-[11px] flex items-center gap-1">
+                                <i class="fa-solid fa-shoe-prints text-xs"></i> 解謎三步驟提示：
+                            </div>
+                            <p class="text-[11px] text-slate-400">1. 以全體 $N=200$ 為分母，算出實際交集 $P(A \cap B) = \frac{30}{200}$。</p>
+                            <p class="text-[11px] text-slate-400">2. 算出全體升遷率 $P(A) = \frac{40}{200}$ 與男性率 $P(B) = \frac{100}{200}$ 相乘的理論值。</p>
+                            <p class="text-[11px] text-slate-400">3. 比對兩者是否相等，以此檢驗「性別」與「升遷」是否獨立。</p>
+                        </div>
+
+                        <div class="bg-slate-900 p-3 rounded-lg border border-slate-800 font-mono text-xs space-y-3">
+                            <div class="grid grid-cols-3 gap-2 items-center text-center">
+                                <!-- Intersect Selector -->
+                                <div>
+                                    <label class="block text-[10px] text-slate-400 mb-1">交集機率 $P(A \cap B)$</label>
+                                    <select id="select-intersect" onchange="stage2Intersect=this.value" class="w-full bg-slate-800 border border-slate-700 text-cyan-300 p-2 rounded text-xs text-center font-bold">
+                                        <option value="0.05">0.05</option>
+                                        <option value="0.10">0.10</option>
+                                        <option value="0.15">0.15</option>
+                                        <option value="0.20">0.20</option>
+                                    </select>
+                                </div>
+
+                                <!-- Relation Operator -->
+                                <div>
+                                    <label class="block text-[10px] text-slate-400 mb-1">關係比較</label>
+                                    <select id="select-symbol" onchange="stage2Symbol=this.value" class="w-full bg-slate-800 border border-slate-700 text-amber-400 p-2 rounded text-xs text-center font-bold">
+                                        <option value="=">=</option>
+                                        <option value="≠">≠</option>
+                                    </select>
+                                </div>
+
+                                <!-- Product Selector -->
+                                <div>
+                                    <label class="block text-[10px] text-slate-400 mb-1">理論乘積 $P(A) \times P(B)$</label>
+                                    <select id="select-product" onchange="stage2Product=this.value" class="w-full bg-slate-800 border border-slate-700 text-purple-300 p-2 rounded text-xs text-center font-bold">
+                                        <option value="0.05">0.05</option>
+                                        <option value="0.10">0.10</option>
+                                        <option value="0.15">0.15</option>
+                                        <option value="0.25">0.25</option>
+                                    </select>
+                                </div>
+                            </div>
+                        </div>
+
+                        <button onclick="submitStage2()" class="w-full py-2.5 bg-cyan-600 hover:bg-cyan-500 text-slate-950 font-mono text-xs font-bold rounded-lg transition shadow glow-accent flex items-center justify-center gap-2">
+                            <i class="fa-solid fa-network-wired"></i>
+                            <span>傳送邏輯訊號並驗證</span>
+                        </button>
+                    </div>
+                `;
+
+            } else if (currentStage === 3) {
+                container.innerHTML = `
+                    <div class="space-y-4">
+                        <div class="flex items-center justify-between text-xs font-mono text-cyan-300 border-b border-slate-800 pb-2">
+                            <span><i class="fa-solid fa-sliders mr-1"></i>裝置 3：部門結構診斷儀</span>
+                            <span class="text-slate-400">請填入分析結論</span>
+                        </div>
+
+                        <div class="bg-slate-900/90 border border-slate-800 rounded-lg p-3 text-xs font-mono space-y-1 text-slate-300">
+                            <div class="text-amber-400 font-bold text-[11px] flex items-center gap-1">
+                                <i class="fa-solid fa-shoe-prints text-xs"></i> 解謎三步驟提示：
+                            </div>
+                            <p class="text-[11px] text-slate-400">1. 開啟【證物 C】，找出技術部女性總人數（分母）與升遷人數（分子）。</p>
+                            <p class="text-[11px] text-slate-400">2. 計算技術部女性條件升遷率：$\frac{\text{技術部女性升遷人數}}{\text{技術部女性總人數}} \times 100\%$。</p>
+                            <p class="text-[11px] text-slate-400">3. 思考為何各部門個別看無差異，合起來看卻差異極大（辛普森悖論）。</p>
+                        </div>
+
+                        <div class="bg-slate-900 p-3 rounded-lg border border-slate-800 space-y-3 font-mono text-xs">
+                            <div>
+                                <label class="block text-slate-300 mb-1">1. 計算出的「技術部」女性升遷率 $P(\text{升遷}|\text{技術部, 女})$：</label>
+                                <div class="flex items-center space-x-2">
+                                    <input type="number" id="input-tech-rate" placeholder="請填入計算結果數字，例如: 25" class="bg-slate-800 border border-slate-700 text-cyan-300 p-2 rounded w-full text-xs font-bold">
+                                    <span class="text-slate-400">%</span>
+                                </div>
+                            </div>
+
+                            <div>
+                                <label class="block text-slate-300 mb-1">2. 總體數據落差的主要結構性原因為：</label>
+                                <select id="select-diagnosis" onchange="stage3Diagnosis=this.value" class="w-full bg-slate-800 border border-slate-700 text-amber-300 p-2 rounded text-xs">
+                                    <option value="">-- 請選擇結構診斷選項 --</option>
+                                    <option value="direct">公司對女性有直接升遷扣分歧視</option>
+                                    <option value="simpson">女性集中於升遷率低的部門（辛普森悖論/職務分流）</option>
+                                    <option value="random">純屬隨機數據誤差，無結構影響</option>
+                                </select>
+                            </div>
+                        </div>
+
+                        <button onclick="submitStage3()" class="w-full py-2.5 bg-emerald-500 hover:bg-emerald-400 text-slate-950 font-mono text-xs font-bold rounded-lg transition shadow glow-success flex items-center justify-center gap-2">
+                            <i class="fa-solid fa-key"></i>
+                            <span>解開檔案室最終大門</span>
+                        </button>
+                    </div>
+                `;
+            }
+
+            renderChatStream(currentStage);
+            triggerMathRender();
+        }
+
+        // Dynamic State Handlers
+        function updateStage1Male(val) {
+            stage1MaleRate = parseInt(val);
+            const el = document.getElementById('val-male-rate');
+            if (el) el.innerText = stage1MaleRate + "%";
+        }
+
+        function updateStage1Female(val) {
+            stage1FemaleRate = parseInt(val);
+            const el = document.getElementById('val-female-rate');
+            if (el) el.innerText = stage1FemaleRate + "%";
+        }
+
+        function submitStage1() {
+            if (stage1MaleRate === 30 && stage1FemaleRate === 10) {
+                setFeedback("✓ 第一關驗證成功！男性條件升遷率 30%，女性條件升遷率 10%。證物 B 已解鎖！", false, true);
+                showCutscene(1);
+            } else {
+                setFeedback("✕ 校正失敗！請檢視【證物 A】表格：分母分別限定為「男性(100人)」與「女性(100人)」下的升遷比例。", true);
+            }
+        }
+
+        function submitStage2() {
+            if (stage2Intersect === "0.15" && stage2Product === "0.10" && stage2Symbol === "≠") {
+                setFeedback("✓ 第二關驗證成功！0.15 ≠ 0.10，成功證明「性別」與「升遷」非獨立事件！證物 C 已解鎖！", false, true);
+                showCutscene(2);
+            } else {
+                setFeedback("✕ 電路過載！提示：交集機率 P(升遷 ∩ 男) = 30/200 = 0.15；獨立預測值 P(升遷) × P(男) = 0.2 × 0.5 = 0.10。", true);
+            }
+        }
+
+        function submitStage3() {
+            const inputRate = parseInt(document.getElementById('input-tech-rate')?.value || "0");
+            if (inputRate === 35 && stage3Diagnosis === "simpson") {
+                setFeedback("✓ 最終驗證通過！成功破解辛普森悖論！大門已安全解鎖！", false, true);
+                setTimeout(() => {
+                    document.getElementById('victory-modal').classList.remove('hidden');
+                    triggerMathRender();
+                }, 800);
+            } else {
+                setFeedback("✕ 診斷失敗！提示：技術部女性 20 人中有 7 人升遷 (7/20 = 35%)，並選擇正確的「辛普森悖論/職務分流」選項。", true);
+            }
+        }
+
+        function showCutscene(completedStage) {
+            const modal = document.getElementById('cutscene-modal');
+            const title = document.getElementById('cutscene-title');
+            const body = document.getElementById('cutscene-body');
+
+            if (completedStage === 1) {
+                title.innerText = "【劇情過場】破解第一重門鎖：人資對話曝光";
+                body.innerHTML = `
+                    <p class="text-cyan-300 font-bold">> 伺服器記錄器解密中...</p>
+                    <p class="text-slate-300">防盜門第一重電子鎖啪嗒一聲打開！伺服器螢幕上映出解密出來的 HR 信件片段：</p>
+                    <p class="text-amber-300 italic">「總裁：全公司男性升遷率 30%，女性只有 10%。如果外部媒體算出來，會質疑我們性別不平等。請儘速準備第二套公關說詞...」</p>
+                    <p class="text-slate-400">你獲得了【證物 B】主管 Slack 對話截圖，接下來需要進行「事件獨立性」的數學驗證！</p>
+                `;
+            } else if (completedStage === 2) {
+                title.innerText = "【劇情過場】破解第二重門鎖：發現高層對策";
+                body.innerHTML = `
+                    <p class="text-cyan-300 font-bold">> 防火牆判定通過：事件非獨立！</p>
+                    <p class="text-slate-300">第二重防火牆宣示破解！伺服器顯示高層會議紀錄：</p>
+                    <p class="text-amber-300 italic">「人資總監：別擔心，我們已經把 80% 的女性新進員工全分配到行政部（升遷名額少的部門），這樣每個部門個別看起來都很公平，整體數據又能壓低女性升遷人數！」</p>
+                    <p class="text-slate-400">這就是典型的「辛普森悖論」！請開啟保險箱取得【證物 C】，給予公司致命的一擊！</p>
+                `;
+            }
+
+            modal.classList.remove('hidden');
+        }
+
+        function closeCutsceneModal() {
+            document.getElementById('cutscene-modal').classList.add('hidden');
+            if (currentStage === 1) advanceToStage(2);
+            else if (currentStage === 2) advanceToStage(3);
+        }
+
+        // Advance to next stage
+        function advanceToStage(nextStage) {
+            currentStage = nextStage;
+
+            const stageBadge = document.getElementById('stage-badge');
+            const progressBar = document.getElementById('progress-bar');
+            const stageTitle = document.getElementById('stage-title');
+            const stageDesc = document.getElementById('stage-description');
+            const prompt = document.getElementById('terminal-prompt');
+
+            if (nextStage === 2) {
+                stageBadge.innerText = "STAGE 2";
+                progressBar.style.width = "66%";
+                stageTitle.innerText = "【第 2 關】伺服器加密日誌：獨立性檢驗";
+                stageDesc.innerText = "第一關證明了男女性升遷率有顯著差異 (30% vs 10%)。人資總監辯稱這只是隨機巧合。請用公式 P(A ∩ B) = P(A) × P(B) 檢驗性別與升遷是否為『獨立事件』！";
+                prompt.innerText = "> 系統驗證：請檢視【證物 B】，設定交集機率與獨立性判斷邏輯。";
+
+                // Unlock Clue 2 Card
+                const card2 = document.getElementById('clue-card-2');
+                card2.className = "cursor-pointer bg-slate-800/80 hover:bg-slate-800 border border-cyan-500/40 rounded-lg p-4 transition group flex flex-col justify-between glow-accent";
+                card2.onclick = () => openDocumentModal(2);
+                card2.innerHTML = `
+                    <div>
+                        <div class="flex justify-between items-center mb-2">
+                            <span class="text-xs font-mono text-cyan-400">證物 B</span>
+                            <i class="fa-solid fa-server text-cyan-400"></i>
+                        </div>
+                        <h4 class="text-sm font-semibold text-slate-100 group-hover:text-cyan-300 transition">主管群 Slack 對話截圖</h4>
+                        <p class="text-xs text-slate-400 mt-1 line-clamp-2">高層內部對話：事件獨立性檢驗...</p>
+                    </div>
+                    <span class="text-[10px] text-cyan-400 font-mono mt-3 inline-block"><i class="fa-solid fa-magnifying-glass mr-1"></i>閱讀密件內容</span>
+                `;
+                document.getElementById('clue-count').innerText = "已取得 2 / 3 個證物";
+
+            } else if (nextStage === 3) {
+                stageBadge.innerText = "STAGE 3";
+                progressBar.style.width = "100%";
+                stageTitle.innerText = "【第 3 關】保險箱細分檔案：辛普森悖論探究";
+                stageDesc.innerText = "公司發表聲明：「我們絕無性別歧視，這是部門業務性質不同造成的天然分流！」請開啟保險箱中的【證物 C】，計算技術部女性升遷率，並診斷數據背後的結構性真相。";
+                prompt.innerText = "> 系統驗證：請檢視【證物 C】，計算控制變因後的部門條件機率並完成診斷。";
+
+                // Unlock Clue 3 Card
+                const card3 = document.getElementById('clue-card-3');
+                card3.className = "cursor-pointer bg-slate-800/80 hover:bg-slate-800 border border-cyan-500/40 rounded-lg p-4 transition group flex flex-col justify-between glow-accent";
+                card3.onclick = () => openDocumentModal(3);
+                card3.innerHTML = `
+                    <div>
+                        <div class="flex justify-between items-center mb-2">
+                            <span class="text-xs font-mono text-cyan-400">證物 C</span>
+                            <i class="fa-solid fa-box-archive text-cyan-400"></i>
+                        </div>
+                        <h4 class="text-sm font-semibold text-slate-100 group-hover:text-cyan-300 transition">部門分流黑箱紀錄</h4>
+                        <p class="text-xs text-slate-400 mt-1 line-clamp-2">技術部 vs 行政部細分交叉統計...</p>
+                    </div>
+                    <span class="text-[10px] text-cyan-400 font-mono mt-3 inline-block"><i class="fa-solid fa-magnifying-glass mr-1"></i>閱讀密件內容</span>
+                `;
+                document.getElementById('clue-count').innerText = "已取得 3 / 3 個證物";
+            }
+
+            renderMechanism();
+        }
+
+        // Modal Handler for Documents
+        function openDocumentModal(docId) {
+            playSound(500, 'sine', 0.08);
+            const modal = document.getElementById('doc-modal');
+            const container = document.getElementById('doc-modal-content');
+
+            if (docId === 1) {
+                container.innerHTML = `
+                    <div class="flex items-center gap-2 text-cyan-400 font-mono text-xs mb-1">
+                        <i class="fa-solid fa-file-invoice"></i> 證物 A 詳情
+                    </div>
+                    <h3 class="text-lg font-bold text-slate-100 mb-2">巨頭科技全體員工升遷統計雙向表 ($N = 200$)</h3>
+                    
+                    <div class="bg-slate-950 p-3 rounded-lg border border-slate-800 text-xs text-slate-300 font-mono mb-3 space-y-1">
+                        <p class="text-amber-300 font-bold"><i class="fa-solid fa-envelope mr-1"></i>【附帶舉報信碎片】</p>
+                        <p class="italic">「探員，這是我偷偷複製的全公司 200 位員工升遷清單。公司對外宣稱『有 40 人升遷，大家機會均等』，但如果你算算男性與女性各自的升遷比例，就會發現貓膩...」</p>
+                    </div>
+
+                    <div class="overflow-x-auto my-3">
+                        <table class="w-full text-xs text-left border-collapse border border-slate-700 font-mono">
+                            <thead>
+                                <tr class="bg-slate-800 text-slate-300 font-mono">
+                                    <th class="p-2.5 border border-slate-700">性別 \\ 升遷結果</th>
+                                    <th class="p-2.5 border border-slate-700 text-emerald-400">獲得升遷 ($A$)</th>
+                                    <th class="p-2.5 border border-slate-700 text-rose-400">未獲得升遷 ($A'$)</th>
+                                    <th class="p-2.5 border border-slate-700 font-bold">合計</th>
+                                </tr>
+                            </thead>
+                            <tbody class="divide-y divide-slate-800 text-slate-300">
+                                <tr class="hover:bg-slate-800/50">
+                                    <td class="p-2.5 border border-slate-700 font-semibold text-cyan-300">男性 ($B$)</td>
+                                    <td class="p-2.5 border border-slate-700 font-bold text-emerald-400">30</td>
+                                    <td class="p-2.5 border border-slate-700">70</td>
+                                    <td class="p-2.5 border border-slate-700 font-bold">100</td>
+                                </tr>
+                                <tr class="hover:bg-slate-800/50">
+                                    <td class="p-2.5 border border-slate-700 font-semibold text-purple-300">女性 ($B'$)</td>
+                                    <td class="p-2.5 border border-slate-700 font-bold text-emerald-400">10</td>
+                                    <td class="p-2.5 border border-slate-700">90</td>
+                                    <td class="p-2.5 border border-slate-700 font-bold">100</td>
+                                </tr>
+                                <tr class="bg-slate-800/80 font-bold">
+                                    <td class="p-2.5 border border-slate-700">合計</td>
+                                    <td class="p-2.5 border border-slate-700 text-emerald-400">40</td>
+                                    <td class="p-2.5 border border-slate-700">160</td>
+                                    <td class="p-2.5 border border-slate-700 text-cyan-400">200</td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+
+                    <div class="bg-slate-950 p-4 rounded-lg border border-slate-800 text-xs space-y-2 font-mono">
+                        <p class="text-cyan-300 font-bold border-b border-slate-800 pb-1 flex items-center gap-1.5">
+                            <i class="fa-solid fa-calculator"></i>
+                            <span>【步驟引導】文字轉數學語言 (Text-to-Math Translation)</span>
+                        </p>
+                        
+                        <div class="space-y-2.5 text-slate-300">
+                            <div>
+                                <span class="text-amber-300 font-bold">Step 1. 識別事件與對象：</span>
+                                <p class="text-slate-400 text-[11px] pl-2 mt-0.5">定義事件 $A$ =「獲得升遷」，條件 $B$ =「男性」，條件 $B'$ =「女性」。</p>
+                            </div>
+                            
+                            <div>
+                                <span class="text-amber-300 font-bold">Step 2. 轉換條件句型與符號：</span>
+                                <p class="text-slate-400 text-[11px] pl-2 mt-0.5">敘述「在男性員工中，獲得升遷的比例」 $\rightarrow$ 條件機率公式：$P(A|B) = \frac{n(A \cap B)}{n(B)}$。</p>
+                                <p class="text-slate-400 text-[11px] pl-2 text-cyan-300/90 font-semibold">★ 核心觀念：條件「在男性中」代表樣本空間縮小為男性總人數 $n(B) = 100$（分母），而非全體 $200$ 人！</p>
+                            </div>
+
+                            <div>
+                                <span class="text-amber-300 font-bold">Step 3. 代入表格數據計算：</span>
+                                <p class="text-slate-400 text-[11px] pl-2 mt-0.5">• 男性條件升遷率 $P(A|B)$：以男性總數 $n(B) = 100$ 為分母，男性升遷數 $n(A \cap B) = 30$ 為分子計算百分比。</p>
+                                <p class="text-slate-400 text-[11px] pl-2">• 女性條件升遷率 $P(A|B')$：以女性總數 $n(B') = 100$ 為分母，女性升遷數 $n(A \cap B') = 10$ 為分子計算百分比。</p>
+                            </div>
+
+                            <div class="bg-slate-900 p-2.5 rounded border border-cyan-500/30 text-cyan-300 text-[11px] mt-2">
+                                <i class="fa-solid fa-lightbulb text-amber-400 mr-1"></i><strong>任務目標：</strong>請親自算出這兩個百分比，並拉動終端機上的【男性升遷率】與【女性升遷率】滑桿進行驗證！
+                            </div>
+                        </div>
+                    </div>
+                `;
+            } else if (docId === 2) {
+                container.innerHTML = `
+                    <div class="flex items-center gap-2 text-cyan-400 font-mono text-xs mb-1">
+                        <i class="fa-solid fa-server"></i> 證物 B 詳情
+                    </div>
+                    <h3 class="text-lg font-bold text-slate-100 mb-2">主管群 Slack 機密對話紀錄</h3>
+
+                    <div class="bg-slate-950 p-3 rounded-lg border border-slate-800 text-xs space-y-2 font-mono mb-3">
+                        <div class="text-slate-400 border-b border-slate-800 pb-1 flex justify-between">
+                            <span># exec-internal-chat</span>
+                            <span class="text-amber-400">密件截圖</span>
+                        </div>
+                        <p><span class="text-cyan-400 font-bold">HR Director:</span> 「公關部問我，如果勞動局檢查，要怎麼證明『性別與升遷無關』？」</p>
+                        <p><span class="text-purple-400 font-bold">VP Alex:</span> 「就說升遷是完全獨立的隨機事件啊！性別根本不影響結果。」</p>
+                        <p><span class="text-emerald-400 font-bold">吹哨者註記:</span> 「獨立個頭！只要比對『實際交集機率 $P(A \cap B)$』和『獨立假設理論值 $P(A) \times P(B)$』，就能證明他們在撒謊！」</p>
+                    </div>
+
+                    <div class="bg-slate-950 p-4 rounded-lg border border-slate-800 text-xs space-y-2 font-mono">
+                        <p class="text-cyan-400 font-bold border-b border-slate-800 pb-1 flex items-center gap-1.5">
+                            <i class="fa-solid fa-calculator"></i>
+                            <span>【步驟引導】「事件獨立性」文字轉數學檢驗</span>
+                        </p>
+                        <div class="space-y-2.5 text-slate-300">
+                            <div>
+                                <span class="text-amber-300 font-bold">Step 1. 計算全局獨立事件（以全體 N=200 為分母）：</span>
+                                <p class="text-slate-400 text-[11px] pl-2 mt-0.5">• 全體升遷率 $P(A) = \frac{\text{總升遷人數 } 40}{\text{全體人數 } 200}$</p>
+                                <p class="text-slate-400 text-[11px] pl-2">• 全體男性率 $P(B) = \frac{\text{總男性人數 } 100}{\text{全體人數 } 200}$</p>
+                            </div>
+
+                            <div>
+                                <span class="text-amber-300 font-bold">Step 2. 計算「既是男性且獲得升遷」的交集機率：</span>
+                                <p class="text-slate-400 text-[11px] pl-2 mt-0.5">• 實際交集機率 $P(A \cap B) = \frac{\text{男性升遷人數 } 30}{\text{全體人數 } 200}$（請轉換為小數）</p>
+                            </div>
+
+                            <div>
+                                <span class="text-amber-300 font-bold">Step 3. 獨立性數學檢驗公式：</span>
+                                <p class="text-slate-400 text-[11px] pl-2 mt-0.5">根據定義，若兩事件獨立，必須滿足 $P(A \cap B) = P(A) \times P(B)$。</p>
+                                <p class="text-slate-400 text-[11px] pl-2 text-cyan-300/90 font-semibold">★ 請算出左式的實際值 $P(A \cap B)$ 與右式的理論乘積 $P(A) \times P(B)$，並比對兩者是否相等！</p>
+                            </div>
+                        </div>
+                    </div>
+                `;
+            } else if (docId === 3) {
+                container.innerHTML = `
+                    <div class="flex items-center gap-2 text-cyan-400 font-mono text-xs mb-1">
+                        <i class="fa-solid fa-box-archive"></i> 證物 C 詳情
+                    </div>
+                    <h3 class="text-lg font-bold text-slate-100 mb-2">部門分流細分交叉數據表 ($N = 200$)</h3>
+
+                    <div class="bg-slate-950 p-3 rounded-lg border border-slate-800 text-xs text-slate-300 font-mono mb-3 space-y-1">
+                        <p class="text-amber-300 font-bold"><i class="fa-solid fa-folder-tree mr-1"></i>【人資委員會內部會議決議】</p>
+                        <p class="italic">「為了應付性平調查，我們將員工分為技術部與行政部。你會發現，在技術部裡面，男女人數雖有差，但升遷率完全一樣；行政部也是！這樣我們就可以辯稱是『部門專業屬性差異』了...」</p>
+                    </div>
+
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-3 my-3 text-xs font-mono">
+                        <!-- Technical Dept -->
+                        <div class="bg-slate-950 p-3 rounded border border-cyan-500/30 space-y-1">
+                            <h4 class="font-bold text-cyan-300">部門 1：技術部 (升遷名額多, 總升遷率35%)</h4>
+                            <p class="text-slate-300">• 男性：80 人中 28 人升遷 (28/80 = 35%)</p>
+                            <p class="text-amber-300 font-bold">• 女性：20 人中 7 人升遷 ($n = 20$, 升遷 $= 7$)</p>
+                        </div>
+                        <!-- Admin Dept -->
+                        <div class="bg-slate-950 p-3 rounded border border-slate-800 space-y-1">
+                            <h4 class="font-bold text-slate-400">部門 2：行政部 (升遷名額少, 總升遷率10%)</h4>
+                            <p class="text-slate-300">• 男性：20 人中 2 人升遷 (2/20 = 10%)</p>
+                            <p class="text-slate-300">• 女性：80 人中 8 人升遷 (8/80 = 10%)</p>
+                        </div>
+                    </div>
+
+                    <div class="bg-slate-950 p-4 rounded-lg border border-slate-800 text-xs space-y-2 font-mono">
+                        <p class="text-emerald-400 font-bold border-b border-slate-800 pb-1 flex items-center gap-1.5">
+                            <i class="fa-solid fa-calculator"></i>
+                            <span>【步驟引導】控制變因（第三變因）的條件機率計算</span>
+                        </p>
+                        <div class="space-y-2.5 text-slate-300">
+                            <div>
+                                <span class="text-amber-300 font-bold">Step 1. 限定「技術部女性」視角：</span>
+                                <p class="text-slate-400 text-[11px] pl-2 mt-0.5">將範圍限制在技術部，條件為「技術部的女性人數」（分母）。</p>
+                            </div>
+
+                            <div>
+                                <span class="text-amber-300 font-bold">Step 2. 寫出子群體條件機率公式：</span>
+                                <p class="text-slate-400 text-[11px] pl-2 mt-0.5">數學符號：$P(\text{升遷} | \text{技術部, 女}) = \frac{\text{技術部女性升遷人數}}{\text{技術部女性總人數}}$</p>
+                                <p class="text-slate-400 text-[11px] pl-2 mt-0.5">請查閱上方數據計算其數值（換算為百分比 %）。</p>
+                            </div>
+
+                            <div>
+                                <span class="text-amber-300 font-bold">Step 3. 剖析「辛普森悖論 (Simpson's Paradox)」現象：</span>
+                                <p class="text-slate-400 text-[11px] pl-2 mt-0.5">比較技術部與行政部各自內部的男女性升遷率，思考為什麼各部門分開看時男女性升遷率完全相同（技術部皆為35%，行政部皆為10%），但合併後總體女性升遷率卻低得多？這揭露了什麼樣的「職務分流 / 人數分布不均」問題？</p>
+                            </div>
+                        </div>
+                    </div>
+                `;
+            }
+
+            modal.classList.remove('hidden');
+            triggerMathRender();
+        }
+
+        function closeDocumentModal() {
+            document.getElementById('doc-modal').classList.add('hidden');
+        }
+
+        function toggleStoryLogModal() {
+            document.getElementById('story-modal').classList.toggle('hidden');
+        }
+
+        // Hint Handler
+        function toggleHintModal() {
+            const modal = document.getElementById('hint-modal');
+            const hintText = document.getElementById('hint-modal-text');
+
+            if (currentStage === 1) {
+                hintText.innerHTML = `
+                    <div class="space-y-3 font-mono text-xs">
+                        <p class="text-amber-400 font-bold"><i class="fa-solid fa-graduation-cap mr-1"></i>關卡 1 步驟引導：文字轉換條件機率</p>
+                        
+                        <div class="bg-slate-950 p-3 rounded border border-slate-800 space-y-2">
+                            <p class="text-slate-300"><strong>步驟 1. 鎖定「男性條件升遷率」：</strong></p>
+                            <p class="text-slate-400 pl-2">題目文字「在男性員工中，升遷的比例」 $\rightarrow$ 分母 $n(\text{男}) = 100$ 人，分子 $n(\text{男} \cap \text{升遷}) = 30$ 人。算式：$\frac{30}{100} = 30\%$。</p>
+
+                            <p class="text-slate-300 mt-2"><strong>步驟 2. 鎖定「女性條件升遷率」：</strong></p>
+                            <p class="text-slate-400 pl-2">題目文字「在女性員工中，升遷的比例」 $\rightarrow$ 分母 $n(\text{女}) = 100$ 人，分子 $n(\text{女} \cap \text{升遷}) = 10$ 人。算式：$\frac{10}{100} = 10\%$。</p>
+                        </div>
+                    </div>
+                `;
+            } else if (currentStage === 2) {
+                hintText.innerHTML = `
+                    <div class="space-y-3 font-mono text-xs">
+                        <p class="text-amber-400 font-bold"><i class="fa-solid fa-graduation-cap mr-1"></i>關卡 2 步驟引導：獨立性檢驗步驟</p>
+
+                        <div class="bg-slate-950 p-3 rounded border border-slate-800 space-y-2">
+                            <p class="text-slate-300"><strong>步驟 1. 求出實際交集機率 $P(A \cap B)$：</strong></p>
+                            <p class="text-slate-400 pl-2">全體 200 人中，既是男性又升遷有 30 人 $\rightarrow P(A \cap B) = \frac{30}{200} = 0.15$。</p>
+
+                            <p class="text-slate-300 mt-2"><strong>步驟 2. 求出獨立假設理論乘積 $P(A) \times P(B)$：</strong></p>
+                            <p class="text-slate-400 pl-2">全體升遷率 $P(A) = \frac{40}{200} = 0.20$；全體男性率 $P(B) = \frac{100}{200} = 0.50$。兩者相乘：$0.20 \times 0.50 = 0.10$。</p>
+
+                            <p class="text-slate-300 mt-2"><strong>步驟 3. 比較兩者：</strong></p>
+                            <p class="text-slate-400 pl-2">因為 $0.15 \neq 0.10$，證明性別與升遷結果並不獨立！</p>
+                        </div>
+                    </div>
+                `;
+            } else if (currentStage === 3) {
+                hintText.innerHTML = `
+                    <div class="space-y-3 font-mono text-xs">
+                        <p class="text-amber-400 font-bold"><i class="fa-solid fa-graduation-cap mr-1"></i>關卡 3 步驟引導：辛普森悖論解構</p>
+
+                        <div class="bg-slate-950 p-3 rounded border border-slate-800 space-y-2">
+                            <p class="text-slate-300"><strong>步驟 1. 計算技術部女性條件升遷率：</strong></p>
+                            <p class="text-slate-400 pl-2">技術部女性共有 20 人，獲得升遷 7 人 $\rightarrow P(\text{升遷}|\text{技術部, 女}) = \frac{7}{20} = 35\%$。</p>
+
+                            <p class="text-slate-300 mt-2"><strong>步驟 2. 選擇結構診斷：</strong></p>
+                            <p class="text-slate-400 pl-2">注意公司將 80% 的女性指派到升遷率僅 10% 的行政部，此現象稱為「辛普森悖論（職務結構分流）」。</p>
+                        </div>
+                    </div>
+                `;
+            }
+
+            modal.classList.toggle('hidden');
+            triggerMathRender();
+        }
+
+        function restartGame() {
+            document.getElementById('victory-modal').classList.add('hidden');
+            currentStage = 1;
+            secondsElapsed = 0;
+            stage1MaleRate = 0;
+            stage1FemaleRate = 0;
+            
+            // Reset cards UI
+            const card2 = document.getElementById('clue-card-2');
+            card2.className = "opacity-50 bg-slate-900 border border-slate-800 rounded-lg p-4 flex flex-col justify-between cursor-not-allowed";
+            card2.onclick = null;
+            card2.innerHTML = `
+                <div>
+                    <div class="flex justify-between items-center mb-2">
+                        <span class="text-xs font-mono text-slate-500">證物 B</span>
+                        <i class="fa-solid fa-lock text-slate-600"></i>
+                    </div>
+                    <h4 class="text-sm font-semibold text-slate-500">主管群 Slack 對話截圖</h4>
+                    <p class="text-xs text-slate-600 mt-1">破解 STAGE 1 後取得解密金鑰...</p>
+                </div>
+                <span class="text-[10px] text-slate-600 font-mono mt-3 inline-block">未解鎖</span>
+            `;
+
+            const card3 = document.getElementById('clue-card-3');
+            card3.className = "opacity-50 bg-slate-900 border border-slate-800 rounded-lg p-4 flex flex-col justify-between cursor-not-allowed";
+            card3.onclick = null;
+            card3.innerHTML = `
+                <div>
+                    <div class="flex justify-between items-center mb-2">
+                        <span class="text-xs font-mono text-slate-500">證物 C</span>
+                        <i class="fa-solid fa-lock text-slate-600"></i>
+                    </div>
+                    <h4 class="text-sm font-semibold text-slate-500">部門分流黑箱紀錄</h4>
+                    <p class="text-xs text-slate-600 mt-1">破解 STAGE 2 後開啟保險箱...</p>
+                </div>
+                <span class="text-[10px] text-slate-600 font-mono mt-3 inline-block">未解鎖</span>
+            `;
+
+            document.getElementById('stage-badge').innerText = "STAGE 1";
+            document.getElementById('progress-bar').style.width = "33%";
+            document.getElementById('stage-title').innerText = "【案發】封鎖的人資辦公室";
+            document.getElementById('stage-description').innerText = "你（調查員卡特）收到匿名舉報信，暗中進入巨頭科技公司人資總監室搜證。就在你找到第一份檔案時，辦公室電子防盜門突然鎖死！螢幕跳出安全警報，你必須操作中央伺服器，用「數據真相」解開密碼鎖逃生！";
+            document.getElementById('terminal-prompt').innerText = "> 系統驗證指令：檢視【證物 A】，求出男性與女性的「條件升遷率」，調整伺服器天平以解除第一重鎖。";
+            document.getElementById('clue-count').innerText = "已取得 1 / 3 個證物";
+            setFeedback("提示：請先點擊左側「證物 A」檢視舉報信與全體員工升遷數據。");
+            
+            renderMechanism();
+            startTimer();
+        }
+
+        // Initialize App on load
+        window.onload = function() {
+            renderMechanism();
+            startTimer();
+            triggerMathRender();
+        };
+    </script>
+</body>
+</html>
