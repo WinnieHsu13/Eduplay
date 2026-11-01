@@ -1,0 +1,1096 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>階級賽局：深層教育社會學大富翁 (慣習與意識層面融合版)</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <style>
+    @import url('https://fonts.googleapis.com/css2?family=Fredoka:wght@400;600;700&family=Noto+Sans+TC:wght@400;500;700;900&display=swap');
+
+    :root {
+      --bg-main: #fcf8f2;
+      --panel-bg: #ffffff;
+      --text-main: #2d3748;
+      --accent-pink: #ff85a2;
+      --accent-yellow: #f6c90e;
+      --accent-blue: #4ea8de;
+      --accent-green: #06d6a0;
+      --accent-purple: #b5179e;
+    }
+
+    body {
+      font-family: 'Noto Sans TC', 'Fredoka', sans-serif;
+      background-color: var(--bg-main);
+      color: var(--text-main);
+      min-height: 100vh;
+      overflow-x: hidden;
+      background-image: 
+        radial-gradient(circle at 12% 12%, rgba(255, 182, 193, 0.22) 0%, transparent 35%),
+        radial-gradient(circle at 88% 88%, rgba(173, 216, 230, 0.22) 0%, transparent 35%),
+        radial-gradient(circle at 50% 50%, rgba(254, 240, 138, 0.15) 0%, transparent 50%);
+    }
+
+    /* 11x11 環形大富翁棋盤 Layout */
+    .monopoly-board {
+      display: grid;
+      grid-template-columns: repeat(11, 1fr);
+      grid-template-rows: repeat(11, 1fr);
+      gap: 4px;
+      width: 100%;
+      max-width: 1020px;
+      aspect-ratio: 1 / 1;
+      margin: 0 auto;
+      padding: 12px;
+      background: #ffffff;
+      border-radius: 28px;
+      box-shadow: 0 20px 45px rgba(235, 180, 150, 0.22), 0 4px 12px rgba(0,0,0,0.05);
+      border: 4px solid #f3d5b5;
+      position: relative;
+    }
+
+    .tile {
+      background: #fffdfa;
+      border: 2px solid #e2e8f0;
+      border-radius: 10px;
+      padding: 3px;
+      display: flex;
+      flex-direction: column;
+      justify-content: space-between;
+      align-items: center;
+      position: relative;
+      transition: all 0.2s cubic-bezier(0.34, 1.56, 0.64, 1);
+      user-select: none;
+      text-align: center;
+      overflow: hidden;
+      box-shadow: 0 2px 5px rgba(0,0,0,0.03);
+      cursor: pointer;
+    }
+
+    .tile:hover {
+      border-color: #ff99c8;
+      transform: translateY(-3px) scale(1.04);
+      z-index: 20;
+      box-shadow: 0 8px 20px rgba(255, 133, 162, 0.3);
+    }
+
+    /* 各區塊類別邊框色彩 */
+    .tile-cat-early { border-top: 5px solid #ff99c8; background: #fff5f8; }
+    .tile-cat-k12 { border-top: 5px solid #a9def9; background: #f0f9ff; }
+    .tile-cat-higher { border-top: 5px solid #e4c1f9; background: #faf5ff; }
+    .tile-cat-elite { border-top: 5px solid #fcf6bd; background: #fffbeb; }
+    .tile-cat-public { border-top: 5px solid #ff9f1c; background: #fff8f0; }
+    .tile-cat-chance { border-top: 5px solid #06d6a0; background: #f0fdf4; }
+    .tile-cat-fate { border-top: 5px solid #ff70a6; background: #fff1f2; }
+    .tile-cat-corner { border: 3px solid #ffb703; background: #fffbeb; }
+
+    /* 中央區域 */
+    .board-center-area {
+      grid-column: 2 / 11;
+      grid-row: 2 / 11;
+      background: linear-gradient(135deg, #ffffff 0%, #fffbf5 100%);
+      border-radius: 20px;
+      border: 3px dashed #ebd5b5;
+      padding: 16px;
+      display: flex;
+      flex-direction: column;
+      justify-content: space-between;
+      box-shadow: inset 0 0 20px rgba(255, 235, 200, 0.3);
+      overflow-y: auto;
+    }
+
+    .piece-container {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 2px;
+      justify-content: center;
+      align-items: center;
+      position: absolute;
+      bottom: 2px;
+      width: 100%;
+    }
+
+    .piece {
+      width: 18px;
+      height: 18px;
+      border-radius: 50%;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      font-weight: 900;
+      font-size: 0.65rem;
+      color: #fff;
+      box-shadow: 0 3px 8px rgba(0,0,0,0.25);
+      transition: all 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
+      border: 2px solid #ffffff;
+    }
+
+    .piece.active {
+      transform: scale(1.35);
+      z-index: 15;
+      animation: cute-bounce 1s infinite alternate ease-in-out;
+    }
+
+    @keyframes cute-bounce {
+      0% { transform: scale(1.3) translateY(0); }
+      100% { transform: scale(1.45) translateY(-4px); }
+    }
+
+    .dice {
+      width: 54px;
+      height: 54px;
+      background: #ffffff;
+      border: 3px solid #ffd166;
+      color: #ef476f;
+      font-size: 2rem;
+      font-weight: 900;
+      border-radius: 16px;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      box-shadow: 0 8px 18px rgba(255, 209, 102, 0.4);
+      cursor: pointer;
+      user-select: none;
+    }
+
+    .dice.rolling {
+      animation: cute-roll 0.4s ease-in-out infinite alternate;
+    }
+
+    @keyframes cute-roll {
+      0% { transform: rotate(-25deg) scale(0.9); }
+      100% { transform: rotate(25deg) scale(1.15); }
+    }
+
+    .btn-cute {
+      background: linear-gradient(135deg, #ff85a2 0%, #ff5277 100%);
+      color: white;
+      font-weight: 800;
+      padding: 8px 18px;
+      border-radius: 14px;
+      box-shadow: 0 6px 16px rgba(255, 133, 162, 0.4);
+      transition: all 0.2s ease;
+      border: 2px solid #ffffff;
+    }
+
+    .btn-cute:hover:not(:disabled) {
+      transform: translateY(-2deg) scale(1.02);
+      box-shadow: 0 8px 22px rgba(255, 133, 162, 0.6);
+    }
+
+    .modal-overlay {
+      position: fixed;
+      inset: 0;
+      background: rgba(45, 55, 72, 0.6);
+      backdrop-filter: blur(8px);
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      z-index: 100;
+      opacity: 0;
+      pointer-events: none;
+      transition: opacity 0.3s ease;
+    }
+
+    .modal-overlay.active {
+      opacity: 1;
+      pointer-events: auto;
+    }
+
+    .modal-box {
+      background: #ffffff;
+      border: 3px solid #ffccd5;
+      border-radius: 28px;
+      width: 92%;
+      max-width: 760px;
+      padding: 24px;
+      box-shadow: 0 25px 50px rgba(0, 0, 0, 0.18);
+      transform: scale(0.92);
+      transition: transform 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
+      max-height: 90vh;
+      overflow-y: auto;
+    }
+
+    .modal-overlay.active .modal-box {
+      transform: scale(1);
+    }
+
+    .log-panel {
+      background: #fffcf8;
+      border: 2px solid #f3d5b5;
+      border-radius: 16px;
+      height: 160px;
+      overflow-y: auto;
+      padding: 12px;
+      font-size: 0.82rem;
+      color: #334155;
+    }
+
+    .log-entry {
+      margin-bottom: 8px;
+      padding-bottom: 6px;
+      border-bottom: 1px dashed #e2e8f0;
+      line-height: 1.45;
+    }
+
+    .owner-badge {
+      font-size: 0.58rem;
+      padding: 1px 4px;
+      border-radius: 6px;
+      font-weight: 900;
+      margin-top: 1px;
+      box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+    }
+  </style>
+</head>
+<body class="p-3 md:p-6">
+
+  <header class="max-w-7xl mx-auto mb-4 flex flex-col md:flex-row justify-between items-center gap-3">
+    <div>
+      <h1 class="text-2xl md:text-3xl font-black text-gray-800 flex items-center gap-2">
+        <span>🧸</span>
+        <span class="bg-clip-text text-transparent bg-gradient-to-r from-pink-500 via-purple-500 to-sky-500">
+          階級賽局：深層教育社會學大富翁
+        </span>
+        <span class="text-xs md:text-sm bg-pink-100 text-pink-600 font-bold px-3 py-1 rounded-full border border-pink-200">
+          慣習與意識層面融合版
+        </span>
+      </h1>
+      <p class="text-xs md:text-sm text-gray-600 font-bold mt-1">
+        功能論 vs 衝突論 vs 微觀互動 vs 批判理論 ＋ 布迪厄慣習與意識解析
+      </p>
+    </div>
+
+    <!-- 頂部控制面板 -->
+    <div class="flex flex-wrap items-center gap-2 md:gap-3">
+      <button id="bgmBtn" onclick="toggleBGM()" class="px-3 py-2 bg-gradient-to-r from-teal-500 to-emerald-600 text-white rounded-2xl text-xs md:text-sm font-black shadow-md hover:scale-105 transition border-2 border-white flex items-center gap-1.5">
+        <span id="bgmIcon">🎵</span> <span id="bgmText">聲景音效: OFF</span>
+      </button>
+
+      <button onclick="openHabitusModal()" class="px-3 py-2 bg-gradient-to-r from-pink-600 to-rose-500 text-white rounded-2xl text-xs md:text-sm font-black shadow-md hover:scale-105 transition border-2 border-white flex items-center gap-1.5 animate-pulse">
+        <span>🧠</span> 慣習與意識深度解析
+      </button>
+
+      <button onclick="openLexiconModal()" class="px-3 py-2 bg-gradient-to-r from-purple-600 to-pink-500 text-white rounded-2xl text-xs md:text-sm font-black shadow-md hover:scale-105 transition border-2 border-white flex items-center gap-1.5">
+        <span>📖</span> 時空脈絡與四大流派
+      </button>
+
+      <div class="bg-white border-2 border-amber-200 px-3.5 py-1.5 rounded-2xl flex items-center gap-3 text-xs md:text-sm font-bold shadow-sm">
+        <div>
+          <span class="text-gray-500">📈 文憑通膨：</span>
+          <span id="inflationRateText" class="text-pink-600 text-base font-extrabold">+0%</span>
+        </div>
+        <div class="border-l-2 border-gray-200 pl-3">
+          <span class="text-gray-500">⚖️ 階段：</span>
+          <span id="trackingStatusText" class="text-sky-600 text-base font-extrabold">基礎通識期</span>
+        </div>
+      </div>
+    </div>
+  </header>
+
+  <main class="max-w-7xl mx-auto grid grid-cols-1 lg:grid-cols-12 gap-5 items-start">
+    
+    <!-- 左側邊欄：玩家資產 + 資本轉化與批判性反思實驗室 + 賽局日誌 -->
+    <section class="lg:col-span-4 space-y-4">
+      <!-- 4 位玩家卡片 -->
+      <div id="playerDashboards" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-1 gap-2.5">
+        <!-- JS 動態繪製 -->
+      </div>
+
+      <!-- Bourdieu 資本轉化與批判性反思實驗室 -->
+      <div class="bg-white p-4 rounded-2xl border-2 border-purple-200 shadow-md space-y-2.5">
+        <div class="flex justify-between items-center border-b-2 border-purple-100 pb-2">
+          <h3 class="text-sm font-black text-purple-700 flex items-center gap-1.5">
+            <span>🧪</span> 布迪厄 (Bourdieu) 資本轉化實驗室
+          </h3>
+          <span class="text-xs font-bold text-purple-400">慣習契合度</span>
+        </div>
+        <p class="text-xs text-gray-600 font-medium leading-relaxed">
+          支付 <span class="text-amber-600 font-bold">$500 經濟資本</span> 轉化為文化資本。轉化效率取決於當前玩家的 <span class="text-teal-600 font-bold">慣習 (Habitus) 契合度</span>！
+        </p>
+        <div class="grid grid-cols-1 gap-2">
+          <button onclick="convertCapital()" class="w-full py-2 bg-gradient-to-r from-purple-500 to-indigo-500 hover:from-purple-600 hover:to-indigo-600 text-white font-extrabold rounded-xl text-xs md:text-sm transition shadow-md border-2 border-white">
+            ✨ 執行資本轉化 (支付 $500)
+          </button>
+          <button onclick="triggerReflexivity()" class="w-full py-2 bg-gradient-to-r from-pink-500 to-rose-500 hover:from-pink-600 hover:to-rose-600 text-white font-extrabold rounded-xl text-xs md:text-sm transition shadow-md border-2 border-white">
+            🧠 啟動「批判性反思 (Reflexivity)」(提升慣習 +1)
+          </button>
+        </div>
+      </div>
+
+      <!-- 理論與賽局日誌 -->
+      <div class="bg-white p-4 rounded-2xl border-2 border-amber-200 shadow-md">
+        <h3 class="text-sm font-black text-amber-700 mb-2 flex items-center gap-1.5">
+          <span>📜</span> 理論解析與事件動態日誌
+        </h3>
+        <div id="logContent" class="log-panel font-bold">
+          <div class="log-entry text-gray-500">40格教育社會學大富翁載入完成。請點擊【擲骰子】或【自動 Demo】觀察階級複製與慣習摩擦動態。</div>
+        </div>
+      </div>
+    </section>
+
+    <!-- 右側：11x11 Grid 40格環形棋盤 -->
+    <section class="lg:col-span-8 w-full flex justify-center">
+      <div id="boardGrid" class="monopoly-board">
+        <!-- 40 個格子與中央區域動態繪製 -->
+      </div>
+    </section>
+  </main>
+
+  <!-- 彈出 Modal 視窗 (事件 / 土地選購 / 公共費用繳納) -->
+  <div id="eventModal" class="modal-overlay">
+    <div class="modal-box">
+      <div id="modalPlayerAssetBanner" class="mb-3 bg-gradient-to-r from-purple-950 to-indigo-900 text-white p-3 rounded-2xl shadow-inner border border-purple-400/30">
+        <!-- JS 動態插入玩家資產 -->
+      </div>
+
+      <div id="modalHeader" class="text-base md:text-lg font-black mb-2 flex items-center justify-between">
+        <span id="modalTitle" class="text-gray-800">事件標題</span>
+        <span id="modalBadge" class="text-xs px-3 py-1 rounded-full bg-pink-100 text-pink-600 font-extrabold border border-pink-300">理論節點</span>
+      </div>
+
+      <div id="modalTags" class="flex flex-wrap gap-1.5 mb-3">
+        <!-- JS 動態插入標籤 -->
+      </div>
+
+      <div id="modalBody" class="text-xs md:text-sm text-gray-700 font-bold mb-3 space-y-2">
+        <!-- 內容 -->
+      </div>
+      
+      <div id="modalTheory" class="bg-amber-50/90 p-3.5 rounded-2xl border-2 border-amber-200 text-xs md:text-sm text-amber-900 font-medium mb-4 leading-relaxed space-y-2">
+        <!-- 深層教育社會學理論對接 -->
+      </div>
+      <div id="modalActions" class="flex flex-col sm:flex-row justify-end gap-2.5">
+        <!-- 動態按鈕 -->
+      </div>
+    </div>
+  </div>
+
+  <!-- 布迪厄慣習與意識層面解析 Modal -->
+  <div id="habitusModal" class="modal-overlay">
+    <div class="modal-box max-w-3xl">
+      <div class="flex justify-between items-center mb-3 border-b-2 border-pink-200 pb-2">
+        <h2 class="text-lg md:text-xl font-black text-pink-800 flex items-center gap-2">
+          <span>🧠</span> 布迪厄「慣習」（Habitus）與意識層面深度解析
+        </h2>
+        <button onclick="closeHabitusModal()" class="text-gray-400 hover:text-gray-600 font-bold text-xl">&times;</button>
+      </div>
+
+      <div class="space-y-4 max-h-[70vh] overflow-y-auto pr-2 text-xs md:text-sm text-gray-700">
+        
+        <div class="bg-gradient-to-r from-pink-50 to-purple-50 p-4 rounded-2xl border-2 border-pink-200">
+          <h3 class="font-black text-pink-900 text-base mb-1.5 flex items-center gap-1.5">
+            <span>✨</span> 核心定義：既非理性算計，也非純粹本能
+          </h3>
+          <p class="leading-relaxed font-medium text-gray-800">
+            在皮耶·布迪厄（Pierre Bourdieu）的理論體系中，慣習最精確的描述是：<br>
+            <strong class="text-pink-700 text-sm font-extrabold">一種「前反思性的身體化傾向」（Pre-reflective Embodied Disposition）</strong>，或是「實踐感」（Sens Pratique / Practical Sense）。
+          </p>
+        </div>
+
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-3">
+          <div class="bg-white p-3.5 rounded-2xl border-2 border-indigo-100 shadow-sm space-y-1">
+            <h4 class="font-extrabold text-indigo-900 text-sm flex items-center gap-1">
+              <span>1️⃣</span> 前反思性（Pre-reflective）
+            </h4>
+            <p class="text-gray-600 text-xs leading-relaxed">
+              <strong>高於無意識，低於有意識：</strong> 做選擇時非試算表式的理性計算，也不是膝跳反射，而是經長期社會化內化而成的「第二天性」（Second Nature）。
+            </p>
+          </div>
+
+          <div class="bg-white p-3.5 rounded-2xl border-2 border-purple-100 shadow-sm space-y-1">
+            <h4 class="font-extrabold text-purple-900 text-sm flex items-center gap-1">
+              <span>2️⃣</span> 身體化與微觀氣質 (Hexis)
+            </h4>
+            <p class="text-gray-600 text-xs leading-relaxed">
+              刻寫在姿勢、談吐、審美與動作中。支配階級展現「不費力的優雅與自信」（Ease），弱勢階級則容易展現拘謹與緊繃。
+            </p>
+          </div>
+
+          <div class="bg-white p-3.5 rounded-2xl border-2 border-teal-100 shadow-sm space-y-1">
+            <h4 class="font-extrabold text-teal-900 text-sm flex items-center gap-1">
+              <span>3️⃣</span> 實踐感與「賽局感」
+            </h4>
+            <p class="text-gray-600 text-xs leading-relaxed">
+              如同頂尖足球員的「球感」，不需要拿量角器計算傳球，身體在千分之一秒內憑累積的經驗做出直覺最優解。
+            </p>
+          </div>
+
+          <div class="bg-white p-3.5 rounded-2xl border-2 border-amber-100 shadow-sm space-y-1">
+            <h4 class="font-extrabold text-amber-900 text-sm flex items-center gap-1">
+              <span>4️⃣</span> 被結構與生成性結構
+            </h4>
+            <p class="text-gray-600 text-xs leading-relaxed">
+              <strong>Structured & Structuring：</strong> 由歷史與階級條件塑造（被結構），同時也是生成新行為、認知框架與期望的引擎（生成性）。
+            </p>
+          </div>
+        </div>
+
+        <div class="bg-rose-50 p-4 rounded-2xl border-2 border-rose-200 space-y-2">
+          <h3 class="font-black text-rose-900 text-sm md:text-base flex items-center gap-1.5">
+            <span>⚡</span> 慣習何時會進入「顯性有意識」層面？
+          </h3>
+          <div class="space-y-2 text-xs text-rose-950 font-medium">
+            <p>
+              <strong>1. 慣習摩擦 / 慣習滯後（Habitus Hysteresis / 唐吉訶德效應）：</strong><br>
+              當個體的慣習與新場域極度不匹配時（例如農工階級孩子進入頂尖精英聚會），原本流暢的直覺會「卡頓」，個體會極度強烈地意識到自己與環境格格不入。
+            </p>
+            <p>
+              <strong>2. 批判性反思（Reflexivity）：</strong><br>
+              透過社會學學習與自我覺察，將原本「視為理所當然」的偏好（如「我天生沒藝術細胞」）拿出來檢視，意識到這是階級內化的結果，從而解構與轉化。
+            </p>
+          </div>
+        </div>
+
+        <div class="overflow-x-auto border border-gray-200 rounded-xl">
+          <table class="w-full text-xs text-left text-gray-700">
+            <thead class="text-xs text-gray-800 uppercase bg-gray-100 font-extrabold">
+              <tr>
+                <th class="px-3 py-2">意識層級</th>
+                <th class="px-3 py-2">概念類型</th>
+                <th class="px-3 py-2">運作特徵</th>
+                <th class="px-3 py-2">行為表現範例</th>
+              </tr>
+            </thead>
+            <tbody class="divide-y divide-gray-200 font-medium">
+              <tr class="bg-white">
+                <td class="px-3 py-2 font-bold text-indigo-600">有意識 (Conscious)</td>
+                <td class="px-3 py-2">理性選擇 / 顯性思考</td>
+                <td class="px-3 py-2">邏輯推演、成本效益計算</td>
+                <td class="px-3 py-2">考試寫作、填寫志願、商業談判</td>
+              </tr>
+              <tr class="bg-pink-50/80 font-bold">
+                <td class="px-3 py-2 text-pink-700">前反思性 (Pre-reflective)</td>
+                <td class="px-3 py-2 text-pink-700">布迪厄「慣習」(Habitus)</td>
+                <td class="px-3 py-2 text-pink-700">內化實踐感、第二天性、品味</td>
+                <td class="px-3 py-2 text-pink-700">審美偏好、談吐氣質、社交直覺</td>
+              </tr>
+              <tr class="bg-white">
+                <td class="px-3 py-2 font-bold text-gray-500">無意識 (Unconscious)</td>
+                <td class="px-3 py-2">生物本能 / 潛意識</td>
+                <td class="px-3 py-2">生理性、潛意識防衛機制</td>
+                <td class="px-3 py-2">膝跳反射、應激恐懼、夢境</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+
+      </div>
+
+      <div class="mt-4 flex justify-end">
+        <button onclick="closeHabitusModal()" class="btn-cute text-xs md:text-sm px-6 py-2">關閉講義視窗</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- 深層教育社會學理論與台灣課綱百科 Modal -->
+  <div id="lexiconModal" class="modal-overlay">
+    <div class="modal-box max-w-3xl">
+      <div class="flex justify-between items-center mb-3 border-b-2 border-purple-100 pb-2">
+        <h2 class="text-lg md:text-xl font-black text-purple-800 flex items-center gap-2">
+          <span>📖</span> 深層教育社會學四大流派歷史時空脈絡與108課綱對照講義
+        </h2>
+        <button onclick="closeLexiconModal()" class="text-gray-400 hover:text-gray-600 font-bold text-xl">&times;</button>
+      </div>
+
+      <div class="space-y-4 max-h-[70vh] overflow-y-auto pr-2 text-xs md:text-sm text-gray-700">
+        
+        <div class="bg-gradient-to-r from-indigo-50 to-purple-50 p-3.5 rounded-2xl border-2 border-indigo-200">
+          <h3 class="font-black text-indigo-900 text-sm md:text-base mb-1.5 flex items-center gap-1.5">
+            <span>🚀</span> 導論：如何看懂教育社會學的「時空演進」？
+          </h3>
+          <p class="leading-relaxed font-medium text-gray-700 mb-2">
+            教育社會學的理論演進，本質上是對不同時代「教育政策與社會現實落差」的反思：
+          </p>
+          <ul class="list-disc pl-5 space-y-1 font-bold text-indigo-950">
+            <li><strong>1950-60年代（戰後復甦與冷戰期）：</strong>社會急需秩序與技術人才 &rarr; 規範/功能論崛起。</li>
+            <li><strong>1970年代（經濟滯脹與社會運動）：</strong>發現教育未消除貧富差距與階級再複製 &rarr; 衝突論與文憑主義爆發。</li>
+            <li><strong>1970-80年代（黑箱揭密與民權後續）：</strong>關注「學校內部到底在發生什麼事」 &rarr; 微觀互動與新教育社會學。</li>
+            <li><strong>1980年代至今（新自由主義與後工業社會）：</strong>面對國家控管與邊緣群體抵抗 &rarr; 批判理論與後現代學派。</li>
+          </ul>
+        </div>
+
+        <!-- 區塊一：規範/和諧派 -->
+        <div class="bg-blue-50 p-3.5 rounded-2xl border border-blue-200">
+          <h3 class="font-extrabold text-blue-900 text-sm md:text-base mb-1 flex items-center justify-between">
+            <span>第一區塊：規範/和諧派（1950s–1960s）——功能論與功績主義</span>
+            <span class="text-xs bg-blue-200 text-blue-800 px-2 py-0.5 rounded font-bold">1950-1960s 冷戰太空競賽</span>
+          </h3>
+          <div class="space-y-2 text-gray-700 font-medium">
+            <p><strong>名詞註解：</strong><br>
+            • <strong>功績主義 (Meritocracy)：</strong>指個人地位應完全由「能力 (Ability) + 後天努力 (Effort)」決定，非繼承血統或財產。<br>
+            • <strong>社會化與選拔 (Socialization & Selection)：</strong>帕森斯 (Parsons) 主張學校第一是內化共同價值規範；第二是客觀選拔分配社會角色。</p>
+            <p><strong>歷史時空脈絡與原典案例：</strong><br>
+            二戰後美國經濟蓬勃，1957 年蘇聯搶先發射第一顆人造衛星 (Sputnik crisis) 震撼美國政界。美國推出《國防教育法》(NDEA, 1958)，投入巨資補助數理教育與智力測驗，旨在公平篩選頂尖科學精英，呈現技術理性與樂觀主義。</p>
+            <p><strong>台灣 108 課綱對照：</strong><br>
+            傳統聯考/會考「只要拼命讀書，三級貧戶也能翻身」；108 課綱因應半導體產業需求，推動 STEM 與技職重劃。</p>
+          </div>
+        </div>
+
+        <!-- 區塊二：批判/衝突派 -->
+        <div class="bg-purple-50 p-3.5 rounded-2xl border border-purple-200">
+          <h3 class="font-extrabold text-purple-900 text-sm md:text-base mb-1 flex items-center justify-between">
+            <span>第二區塊：批判/衝突派（1970s–）——文化再複製與文憑霸權</span>
+            <span class="text-xs bg-purple-200 text-purple-800 px-2 py-0.5 rounded font-bold">1970s 五月風暴與民權運動</span>
+          </h3>
+          <div class="space-y-2 text-gray-700 font-medium">
+            <p><strong>名詞註解：</strong><br>
+            • <strong>文化資本 (Cultural Capital)：</strong>具象化（氣質談吐）、客體化（家中藏書樂器）、制度化（名校學歷）。<br>
+            • <strong>符號暴力 (Symbolic Violence)：</strong>支配階級將自身文化品味定義為客觀卓越標準並透過學校強加。<br>
+            • <strong>文憑主義與通膨 (Credentialism & Inflation)：</strong>柯林斯 (Collins) 指文憑作為壟斷資源通行證，大學普及引發文憑貶值。</p>
+            <p><strong>歷史時空脈絡與原典案例：</strong><br>
+            1968 年法國「五月風暴」與美國民權運動。布迪厄考察 1960 年代巴黎高等師範學院 (Grandes Écoles)，發現資產階級學生談論歌劇獲得高分；柯林斯發現 1970 年代美國企業提升大學學歷門檻以規避民權法案審查，實質排除黑人與低階白人。</p>
+            <p><strong>台灣 108 課綱對照：</strong><br>
+            學習歷程檔案與自主學習計畫高度依賴家庭文化資本；免試入學超額比序與大學普及導致文憑通膨。</p>
+          </div>
+        </div>
+
+        <!-- 區塊三：解釋/微觀派 -->
+        <div class="bg-amber-50 p-3.5 rounded-2xl border border-amber-200">
+          <h3 class="font-extrabold text-amber-900 text-sm md:text-base mb-1 flex items-center justify-between">
+            <span>第三區塊：解釋/微觀互動派（1970s–1980s）——符號互動與黑箱揭密</span>
+            <span class="text-xs bg-amber-200 text-amber-800 px-2 py-0.5 rounded font-bold">1970s 新教育社會學</span>
+          </h3>
+          <div class="space-y-2 text-gray-700 font-medium">
+            <p><strong>名詞註解：</strong><br>
+            • <strong>畢馬龍效應與教師期望（Pygmalion Effect）：</strong>羅森索 (Rosenthal) 指教師對學生的期待會透過微觀互動轉化為自我實現預言。<br>
+            • <strong>標籤理論（Labeling Theory）：</strong>學校將學生歸類為「好學生」或「問題學生」，學生逐步接受標籤並內化角色。<br>
+            • <strong>隱性課程（Hidden Curriculum）：</strong>傑克森 (Jackson) 指學校正式課程之外，所傳授的順從、時間觀、服從權威與階級規範。</p>
+            <p><strong>歷史時空脈絡與原典案例：</strong><br>
+            麥克·楊 (Michael F. D. Young) 1971 年出版《知識與控制》，主張打破學校知識的「客觀神話」，揭露課程安排屬於社會建構；保羅·威利斯 (Paul Willis) 1977 年《學習作工》(Learning to Labour)，研究英國伯明罕勞工階級少年，發現「反學校文化」反而讓他們甘心繼承父親的體力勞動。</p>
+            <p><strong>台灣 108 課綱對照：</strong><br>
+            教室常態分組、導師評語、評量的常態分配，以及能力分組（能力分班）帶來的標籤烙印現象。</p>
+          </div>
+        </div>
+
+        <!-- 區塊四：批判理論與後現代 -->
+        <div class="bg-rose-50 p-3.5 rounded-2xl border border-rose-200">
+          <h3 class="font-extrabold text-rose-900 text-sm md:text-base mb-1 flex items-center justify-between">
+            <span>第四區塊：批判理論與後現代（1980s–）——意識型態批判與意識覺醒</span>
+            <span class="text-xs bg-rose-200 text-rose-800 px-2 py-0.5 rounded font-bold">1980s 意識覺醒與新自由主義</span>
+          </h3>
+          <div class="space-y-2 text-gray-700 font-medium">
+            <p><strong>名詞註解：</strong><br>
+            • <strong>銀行式教育 (Banking Concept of Education)：</strong>佛雷勒 (Freire) 批判教師將知識單向灌入學生頭腦，將學生視為被動容器。<br>
+            • <strong>提問式教育與人性化 (Problem-Posing Education)：</strong>主張師生透過對話解構現實，培養批判意識 (Conscientization)。<br>
+            • <strong>文化霸權與抵抗 (Hegemony & Resistance)：</strong>吉魯 (Giroux) 與阿普爾 (Apple) 主張學校不僅是複製場域，更是抵抗與爭奪意識型態的主體基地。</p>
+            <p><strong>歷史時空脈絡與原典案例：</strong><br>
+            巴西教育家保羅·佛雷勒 1968 年寫下《被壓迫者教育學》，在南美洲推動成年農民識字運動；福柯 (Foucault) 揭示「知識即權力」與學校紀律監控的微觀權力網絡。</p>
+            <p><strong>台灣 108 課綱對照：</strong><br>
+            探究與實作課程、自主學習、批判性思考訓練，以及對原住民與多元族群課程的再修正。</p>
+          </div>
+        </div>
+
+      </div>
+
+      <div class="mt-4 flex justify-end">
+        <button onclick="closeLexiconModal()" class="btn-cute text-xs md:text-sm px-6 py-2">關閉講義百科</button>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    // 4 位玩家資料模型
+    const players = [
+      { id: 0, name: '精英階級 (醫師子女)', role: 'Elite', color: '#ff5277', eco: 2500, cult: 1800, habitus: 5, pos: 0, properties: [], avatar: '👑' },
+      { id: 1, name: '中產階級 (公教子女)', role: 'Middle', color: '#0077b6', eco: 1500, cult: 1200, habitus: 3, pos: 0, properties: [], avatar: '🎓' },
+      { id: 2, name: '勞工階級 (工人子女)', role: 'Working', color: '#06d6a0', eco: 800, cult: 500, habitus: 2, pos: 0, properties: [], avatar: '🛠️' },
+      { id: 3, name: '弱勢階級 (偏鄉/新住民)', role: 'Underprivileged', color: '#ff9f1c', eco: 500, cult: 300, habitus: 1, pos: 0, properties: [], avatar: '🌱' }
+    ];
+
+    let currentTurn = 0;
+    let credentialInflation = 0;
+    let currentStageIndex = 0;
+    const stages = ['基礎通識期', '能力分流期', '階級再複製期', '文憑飽和期'];
+    let isBgmOn = false;
+    let audioCtx = null;
+
+    // 11x11 Grid 40 個環形地塊資料
+    const boardTiles = [
+      // 0-10: 底部 (Col 11->1, Row 11)
+      { id: 0, name: '起點：功績主義', cat: 'corner', cost: 0, rent: 0, school: '功能論', era: '1950s', desc: '通過起點發放基礎資源。功能論主張社會完全客觀選拔。', theory: '【帕森斯 (Parsons) 功能論】：學校作為客觀選拔機制，根據個人能力與努力分配社會地位。' },
+      { id: 1, name: '學前古典樂陶冶', cat: 'early', cost: 200, rent: 30, school: '衝突論', era: '1970s', desc: '從小培養高雅音樂品味，內化為身體化的文化資本。', theory: '【布迪厄 (Bourdieu) 文化資本】：家庭從小提供的藝術薰陶屬於身體化文化資本 (Embodied Capital)。' },
+      { id: 2, name: '雙語私立幼兒園', cat: 'early', cost: 300, rent: 50, school: '衝突論', era: '1970s', desc: '高昂學費奠定語言習慣與階級優勢。', theory: '【伯恩斯坦 (Bernstein) 語言碼】：精緻碼 (Elaborated Code) 與受限碼 (Restricted Code) 的早早期階級分化。' },
+      { id: 3, name: '機會卡：家庭資本', cat: 'chance', cost: 0, rent: 0, school: '微觀派', era: '1970s', desc: '抽出一張家庭背景隨機事件。', theory: '【微觀互動】：家庭日常生活經驗對於個體習慣與自信心的微觀塑造。' },
+      { id: 4, name: '英語夏令營 (海外)', cat: 'early', cost: 250, rent: 40, school: '衝突論', era: '1970s', desc: '拓展國際視野與流利對話自信。', theory: '【資本轉化】：將經濟資本直接購買全球化視野與慣習 (Habitus)。' },
+      { id: 5, name: '公立國民小學', cat: 'public', cost: 150, rent: 20, school: '功能論', era: '1950s', desc: '普及基礎義務教育，學習普遍性規範。', theory: '【杜威/帕森斯】：普遍性規範 (Universalistic Norms) 與社會一體化。' },
+      { id: 6, name: '命運卡：制度變革', cat: 'fate', cost: 0, rent: 0, school: '批判理論', era: '1980s', desc: '抽出一張教育政策政策變動事件。', theory: '【阿普爾 (Apple)】：教育政策乃不同社會階級爭奪意識型態霸權的產物。' },
+      { id: 7, name: '全美語補習班', cat: 'early', cost: 280, rent: 45, school: '文憑主義', era: '1970s', desc: '影子教育 (Shadow Education) 的早期軍備競賽。', theory: '【影子教育】：體制外補習軍備競賽加劇經濟資本不平等。' },
+      { id: 8, name: '學理才藝專長班', cat: 'early', cost: 220, rent: 35, school: '衝突論', era: '1970s', desc: '鋼琴、馬術與棋藝等高雅品味累積。', theory: '【布迪厄 品味判斷】：審美偏好 (Taste) 是階級界線的符號標記。' },
+      { id: 9, name: '偏鄉教育補貼', cat: 'public', cost: 100, rent: 15, school: '批判理論', era: '1980s', desc: '國家提供微薄的補償教育資源。', theory: '【補償教育】：企圖彌補弱勢家庭文化不利，但常難以抵消結構差距。' },
+      { id: 10, name: '角落：能力分流', cat: 'corner', cost: 0, rent: 0, school: '解釋派', era: '1970s', desc: '進入明星國中或資優班分流點。', theory: '【能力分組標籤】：能力分流往往成為以客觀測驗為名的階級過濾網。' },
+
+      // 11-19: 左側 (Col 1, Row 10->2)
+      { id: 11, name: '明星國中資優班', cat: 'k12', cost: 350, rent: 60, school: '解釋派', era: '1970s', desc: '同儕效應與教師高期待累積。', theory: '【羅森索 畢馬龍效應】：教師期待產生自我實現預言。' },
+      { id: 12, name: '常態編班角落', cat: 'k12', cost: 180, rent: 25, school: '功能論', era: '1960s', desc: '貫徹教育機會均等理念。', theory: '【教育機會均等】：保障形式上的起點均等。' },
+      { id: 13, name: '機會卡：老師眼光', cat: 'chance', cost: 0, rent: 0, school: '解釋派', era: '1970s', desc: '教師對不同階級氣質的微觀印象。', theory: '【標籤理論】：氣質優雅者易獲積極評價，拘謹者易被標籤化。' },
+      { id: 14, name: '國考與學測全科班', cat: 'k12', cost: 400, rent: 70, school: '文憑主義', era: '1970s', desc: '密集刷題與升學技巧傳授。', theory: '【柯林斯 文憑通膨】：考試技巧產業化，將應試轉化為資本競爭。' },
+      { id: 15, name: '實驗高級中學', cat: 'k12', cost: 420, rent: 75, school: '衝突論', era: '1970s', desc: '自由開放課程與同儕強大人脈網絡。', theory: '【社會資本】：同儕親近性轉化為未來精英階層的社會網絡 (Social Capital)。' },
+      { id: 16, name: '隱性課程：服從訓導', cat: 'k12', cost: 150, rent: 20, school: '解釋派', era: '1970s', desc: '規範時間觀念與服從權威。', theory: '【傑克森 隱性課程】：學校正式課程之外，所傳授的順從與時間紀律。' },
+      { id: 17, name: '命運卡：教改政策', cat: 'fate', cost: 0, rent: 0, school: '批判理論', era: '1980s', desc: '教育改革帶來的機制波動。', theory: '【阿普爾】：制度改革若未改變結構，常被優勢階級迅速適應。' },
+      { id: 18, name: '社區普通高中', cat: 'k12', cost: 250, rent: 40, school: '功能論', era: '1960s', desc: '社區化就近入學，平衡城鄉發展。', theory: '【功能論】：平實提供普通高中課程與社會化功能。' },
+      { id: 19, name: '技職工科高職', cat: 'k12', cost: 220, rent: 35, school: '衝突論', era: '1970s', desc: '培育產業基層勞工技能。', theory: '【鮑爾斯與金蒂斯 (Bowles & Gintis) 對應原理】：學校階級結構對應生產工廠結構。' },
+      { id: 20, name: '角落：文憑通膨', cat: 'corner', cost: 0, rent: 0, school: '文憑主義', era: '1970s', desc: '進入學歷貶值監獄，需停擲或繳交手續費。', theory: '【柯林斯】：高等教育普及導致文憑門檻不斷飆升，形成學歷貶值。' },
+
+      // 21-30: 頂部 (Col 1->11, Row 1)
+      { id: 21, name: '頂尖研究型大學', cat: 'higher', cost: 500, rent: 100, school: '衝突論', era: '1970s', desc: '獲取制度化文化資本 (名校學位)。', theory: '【制度化文化資本】：頂尖名校學歷作為階級複製與資格壟斷通行證。' },
+      { id: 22, name: '學習歷程檔案審查', cat: 'higher', cost: 300, rent: 50, school: '衝突論', era: '1970s', desc: '多元表現極度考驗家庭資源備置。', theory: '【符號暴力】：將需要經濟資本支持的多元經歷定義為「卓越」標準。' },
+      { id: 23, name: '機會卡：論文發表', cat: 'chance', cost: 0, rent: 0, school: '衝突論', era: '1970s', desc: '學術資本的累積與轉化。', theory: '【學術場域】：科學與學術場域中的符號資本競爭。' },
+      { id: 24, name: '海外交換學生計畫', cat: 'higher', cost: 450, rent: 85, school: '衝突論', era: '1970s', desc: '跨國文化資本與語言雙重優勢。', theory: '【跨國文化資本】：全球化時代國際移動力成為新型優勢。' },
+      { id: 25, name: '國立綜合大學', cat: 'higher', cost: 400, rent: 75, school: '功能論', era: '1960s', desc: '國家資助高水準教育與科研。', theory: '【人力資本論 (Human Capital Theory)】：教育投資提升個人生產力與國家經濟。' },
+      { id: 26, name: '命運卡：高大擴招', cat: 'fate', cost: 0, rent: 0, school: '文憑主義', era: '1970s', desc: '大學數量劇增導致學歷通膨飆升。', theory: '【學歷通膨】：大學畢業生供給過剩，文憑的相對稀缺性下降。' },
+      { id: 27, name: '私立科技大學', cat: 'higher', cost: 320, rent: 55, school: '衝突論', era: '1970s', desc: '學費高昂但高回報率相對不確定。', theory: '【倒置補助】：弱勢學生讀學費較貴私校，資源卻集中於公立頂大。' },
+      { id: 28, name: '自主學習探究專案', cat: 'higher', cost: 280, rent: 45, school: '批判理論', era: '1980s', desc: '培養自主探究與思辨能力。', theory: '【吉魯 批判教育學】：學生作為抗衡權力霸權的主體。' },
+      { id: 29, name: '高額就學貸款', cat: 'public', cost: 200, rent: 30, school: '衝突論', era: '1970s', desc: '剛畢業即背負經濟沉重負擔。', theory: '【負債學徒制】：經濟負擔限縮弱勢學生的生涯選擇自由。' },
+      { id: 30, name: '角落：審判委員會', cat: 'corner', cost: 0, rent: 0, school: '批判理論', era: '1980s', desc: '評估個體慣習與適應狀況。', theory: '【場域與慣習摩擦】：個體習慣與場域規範之間的相容性測試。' },
+
+      // 31-39: 右側 (Col 11, Row 2->10)
+      { id: 31, name: '海外知名學府碩士', cat: 'elite', cost: 600, rent: 120, school: '衝突論', era: '1970s', desc: '極致的精英文化資本累積。', theory: '【階級門閥】：高階文憑成為頂層社會階級排他性 (Closure) 工具。' },
+      { id: 32, name: '校友會精英人脈網絡', cat: 'elite', cost: 550, rent: 110, school: '衝突論', era: '1970s', desc: '高價值社會資本直接對接就業。', theory: '【柯林斯/布迪厄 社會資本】：人脈網絡轉化為直接的職業入場券。' },
+      { id: 33, name: '機會卡：企業實習', cat: 'chance', cost: 0, rent: 0, school: '解釋派', era: '1970s', desc: '無薪實習機會的階級篩選。', theory: '【無薪實習】：唯有家庭支持者能承擔無薪優質實習的機會成本。' },
+      { id: 34, name: '高級國際會議發表', cat: 'elite', cost: 500, rent: 95, school: '衝突論', era: '1970s', desc: '符號資本與專業權威確立。', theory: '【符號資本 (Symbolic Capital)】：聲望、名譽與被承認的合法性。' },
+      { id: 35, name: '繁星推薦公正機制', cat: 'public', cost: 250, rent: 40, school: '功能論', era: '1950s', desc: '平衡城鄉教育差距的制度設計。', theory: '【結構功能】：企圖修正市場失靈的制度性促進機制。' },
+      { id: 36, name: '命運卡：產業轉型', cat: 'fate', cost: 0, rent: 0, school: '批判理論', era: '1980s', desc: '科技變革對不同學門的衝擊。', theory: '【新自由主義】：市場需求重新定義學術知識價值。' },
+      { id: 37, name: '頂尖診所/法務實習', cat: 'elite', cost: 580, rent: 115, school: '衝突論', era: '1970s', desc: '家長資源直接安排的優渥實習。', theory: '【世代間階級轉移】：經濟與社會資本無縫傳承。' },
+      { id: 38, name: '國科會探究計畫', cat: 'elite', cost: 480, rent: 90, school: '批判理論', era: '1980s', desc: '培育高等學術研究精英。', theory: '【知識/權力】：學術體系對合法知識範式的界定。' },
+      { id: 39, name: '批判性反思論壇', cat: 'public', cost: 200, rent: 30, school: '批判理論', era: '1980s', desc: '喚醒批判意識與慣習翻轉。', theory: '【佛雷勒 提問式教育】：覺察壓迫結構並開創變革可能。' }
+    ];
+
+    window.onload = function() {
+      renderBoard();
+      updateDashboards();
+      logEvent('🎮 【階級賽局：深層教育社會學大富翁】載入完成！', 'system');
+      logEvent('💡 請點擊【擲骰子】或【資本轉化】觀察階級複製與慣習動態。', 'info');
+    };
+
+    // 繪製 11x11 Grid 環形棋盤 (40 格)
+    function renderBoard() {
+      const boardEl = document.getElementById('boardGrid');
+      boardEl.innerHTML = '';
+
+      // 計算 40 個格子在 11x11 Grid 中的 Grid Row 與 Grid Column (1-based)
+      const gridCoords = [];
+      // 0-10: Bottom Row (Row 11, Col 11 down to Col 1)
+      for (let c = 11; c >= 1; c--) gridCoords.push({ r: 11, c: c });
+      // 11-19: Left Col (Col 1, Row 10 down to Row 2)
+      for (let r = 10; r >= 2; r--) gridCoords.push({ r: r, c: 1 });
+      // 20-30: Top Row (Row 1, Col 1 up to Col 11)
+      for (let c = 1; c <= 11; c++) gridCoords.push({ r: 1, c: c });
+      // 31-39: Right Col (Col 11, Row 2 down to Row 10)
+      for (let r = 2; r <= 10; r++) gridCoords.push({ r: r, c: 11 });
+
+      // 繪製 40 個 Tile
+      boardTiles.forEach((tile, idx) => {
+        const coord = gridCoords[idx];
+        const tileDiv = document.createElement('div');
+        tileDiv.id = `tile-${idx}`;
+        tileDiv.style.gridRow = coord.r;
+        tileDiv.style.gridColumn = coord.c;
+        tileDiv.className = `tile tile-cat-${tile.cat}`;
+        tileDiv.onclick = () => inspectTile(idx);
+
+        tileDiv.innerHTML = `
+          <div class="text-[9px] font-black tracking-tighter text-gray-700 line-clamp-1">${tile.name}</div>
+          <div class="text-[8px] text-gray-500 font-bold">${tile.cost ? '$' + tile.cost : ''}</div>
+          <div id="tile-owner-${idx}"></div>
+          <div id="tile-pieces-${idx}" class="piece-container"></div>
+        `;
+        boardEl.appendChild(tileDiv);
+      });
+
+      // 繪製中央 controls & telemetry 區域
+      const centerDiv = document.createElement('div');
+      centerDiv.className = 'board-center-area';
+      centerDiv.innerHTML = `
+        <div class="flex justify-between items-center border-b-2 border-amber-100 pb-2">
+          <div>
+            <h2 class="text-base font-black text-gray-800 flex items-center gap-1.5">
+              <span>🏛️</span> 教育場域 (Educational Field)
+            </h2>
+            <p class="text-xs font-bold text-gray-500">當前回合：<span id="turnPlayerName" class="text-pink-600 font-extrabold">精英階級</span></p>
+          </div>
+          <div class="text-right">
+            <span class="text-xs bg-purple-100 text-purple-700 font-extrabold px-2.5 py-1 rounded-full border border-purple-200" id="currentStageBadge">
+              基礎通識期
+            </span>
+          </div>
+        </div>
+
+        <!-- 骰子與控制按鈕區 -->
+        <div class="my-auto py-4 flex flex-col items-center justify-center gap-3">
+          <div id="diceVal" class="dice" onclick="rollDice()">🎲</div>
+          <div class="flex flex-wrap gap-2 justify-center">
+            <button id="rollBtn" onclick="rollDice()" class="btn-cute text-xs md:text-sm">
+              🎲 擲骰子前進 (Roll)
+            </button>
+            <button onclick="autoPlayTurn()" class="btn-cute-secondary text-xs md:text-sm">
+              ⚡ 自動 Demo 回合
+            </button>
+          </div>
+        </div>
+
+        <!-- 底部提示 -->
+        <div class="border-t-2 border-amber-100 pt-2 flex justify-between items-center text-xs text-gray-500 font-bold">
+          <span>🧠 當前習慣 (Habitus) 契合度：<strong id="currentHabitusVal" class="text-purple-600">5</strong></span>
+          <span>按地塊可檢視詳細理論</span>
+        </div>
+      `;
+      boardEl.appendChild(centerDiv);
+
+      updatePlayerPiecesOnBoard();
+    }
+
+    function updatePlayerPiecesOnBoard() {
+      // 清空棋子
+      for (let i = 0; i < 40; i++) {
+        const container = document.getElementById(`tile-pieces-${i}`);
+        if (container) container.innerHTML = '';
+      }
+
+      // 放置棋子
+      players.forEach((p) => {
+        const container = document.getElementById(`tile-pieces-${p.pos}`);
+        if (container) {
+          const piece = document.createElement('div');
+          piece.className = `piece ${p.id === currentTurn ? 'active' : ''}`;
+          piece.style.backgroundColor = p.color;
+          piece.innerText = p.avatar;
+          piece.title = `${p.name} ($${p.eco})`;
+          container.appendChild(piece);
+        }
+      });
+    }
+
+    function updateDashboards() {
+      const container = document.getElementById('playerDashboards');
+      container.innerHTML = '';
+
+      players.forEach((p, idx) => {
+        const isCurrent = idx === currentTurn;
+        const card = document.createElement('div');
+        card.className = `p-3 rounded-2xl border-2 transition-all ${
+          isCurrent ? 'bg-gradient-to-r from-amber-50 to-pink-50 border-pink-400 shadow-md scale-[1.02]' : 'bg-white border-gray-200'
+        }`;
+
+        card.innerHTML = `
+          <div class="flex justify-between items-center mb-1">
+            <span class="font-extrabold text-xs md:text-sm flex items-center gap-1.5" style="color: ${p.color}">
+              <span>${p.avatar}</span> ${p.name}
+            </span>
+            <span class="text-[10px] font-extrabold px-2 py-0.5 rounded-full bg-gray-100 text-gray-600">
+              習慣: +${p.habitus}
+            </span>
+          </div>
+          <div class="grid grid-cols-2 gap-2 text-xs font-bold mt-2">
+            <div class="bg-white/80 p-1.5 rounded-xl border border-gray-100">
+              <span class="text-gray-400 text-[10px] block">💵 經濟資本</span>
+              <span class="text-amber-600 font-extrabold text-sm">$${p.eco}</span>
+            </div>
+            <div class="bg-white/80 p-1.5 rounded-xl border border-gray-100">
+              <span class="text-gray-400 text-[10px] block">📚 文化資本</span>
+              <span class="text-purple-600 font-extrabold text-sm">${p.cult} pts</span>
+            </div>
+          </div>
+        `;
+        container.appendChild(card);
+      });
+
+      // 更新中央資訊
+      const currP = players[currentTurn];
+      const pNameEl = document.getElementById('turnPlayerName');
+      if (pNameEl) {
+        pNameEl.innerText = currP.name;
+        pNameEl.style.color = currP.color;
+      }
+      const habEl = document.getElementById('currentHabitusVal');
+      if (habEl) habEl.innerText = currP.habitus;
+
+      updatePlayerPiecesOnBoard();
+    }
+
+    function rollDice() {
+      playSound('roll');
+      const diceEl = document.getElementById('diceVal');
+      const rollBtn = document.getElementById('rollBtn');
+      diceEl.classList.add('rolling');
+      rollBtn.disabled = true;
+
+      setTimeout(() => {
+        const steps = Math.floor(Math.random() * 6) + 1;
+        diceEl.innerText = steps;
+        diceEl.classList.remove('rolling');
+
+        const p = players[currentTurn];
+        const oldPos = p.pos;
+        p.pos = (p.pos + steps) % 40;
+
+        // 通過起點發放資源
+        if (p.pos < oldPos) {
+          p.eco += 300;
+          p.cult += 100;
+          logEvent(`✨ ${p.name} 通過起點【功績主義】，獲取基礎社會化津貼 +$300, 文化資本 +100!`, 'gain');
+        }
+
+        updateDashboards();
+        handleTileLanding(p, boardTiles[p.pos]);
+        rollBtn.disabled = false;
+      }, 500);
+    }
+
+    function handleTileLanding(player, tile) {
+      playSound('land');
+      logEvent(`📌 ${player.name} 停留在【${tile.name}】(${tile.school})`, 'info');
+
+      // 如果地塊有產權且已被其他人購買
+      const owner = players.find(p => p.properties.includes(tile.id));
+
+      if (owner && owner.id !== player.id) {
+        // 繳交文化/學歷租金
+        const rent = Math.floor(tile.rent * (1 + credentialInflation / 100));
+        player.eco -= rent;
+        owner.eco += rent;
+        playSound('pay');
+        logEvent(`💸 ${player.name} 向地主 ${owner.name} 繳納專利/學歷地租 $${rent}`, 'loss');
+      }
+
+      // 開啟事件 Modal
+      openEventModal(player, tile, owner);
+    }
+
+    function convertCapital() {
+      const p = players[currentTurn];
+      if (p.eco < 500) {
+        alert('經濟資本不足 $500，無法執行資本轉化！');
+        return;
+      }
+
+      p.eco -= 500;
+      // 轉化效率取決於慣習 (Habitus) 契合度：基本 1.0 + habitus * 0.25
+      const gain = Math.floor(500 * (0.8 + p.habitus * 0.25));
+      p.cult += gain;
+      playSound('convert');
+
+      logEvent(`🧪 【資本轉化】${p.name} 支付 $500 經濟資本，憑藉習慣契合度 (+${p.habitus}) 轉化獲得 +${gain} 文化資本！`, 'gain');
+      updateDashboards();
+    }
+
+    function triggerReflexivity() {
+      const p = players[currentTurn];
+      p.habitus += 1;
+      playSound('convert');
+      logEvent(`🧠 【批判性反思】${p.name} 透過自我覺察解構階級慣習限制，慣習契合度提升至 +${p.habitus}!`, 'gain');
+      updateDashboards();
+    }
+
+    function openEventModal(player, tile, owner) {
+      const modal = document.getElementById('eventModal');
+      document.getElementById('modalTitle').innerText = tile.name;
+      document.getElementById('modalBadge').innerText = `${tile.era} | ${tile.school}`;
+      
+      // 玩家資產 Banner
+      document.getElementById('modalPlayerAssetBanner').innerHTML = `
+        <div class="flex justify-between items-center text-xs md:text-sm">
+          <span class="font-bold flex items-center gap-1">
+            <span>${player.avatar}</span> 當前玩家：<strong style="color:${player.color}">${player.name}</strong>
+          </span>
+          <span>💵 $${player.eco} | 📚 ${player.cult} pts | 🧠 習慣:+${player.habitus}</span>
+        </div>
+      `;
+
+      // 標籤
+      document.getElementById('modalTags').innerHTML = `
+        <span class="text-[10px] bg-indigo-100 text-indigo-700 px-2 py-0.5 rounded font-extrabold">${tile.school}</span>
+        <span class="text-[10px] bg-rose-100 text-rose-700 px-2 py-0.5 rounded font-extrabold">${tile.era}</span>
+        <span class="text-[10px] bg-amber-100 text-amber-800 px-2 py-0.5 rounded font-extrabold">類別: ${tile.cat.toUpperCase()}</span>
+      `;
+
+      document.getElementById('modalBody').innerHTML = `<p>${tile.desc}</p>`;
+      document.getElementById('modalTheory').innerHTML = `<p class="leading-relaxed"><strong>💡 深層理論對接：</strong><br>${tile.theory}</p>`;
+
+      const actionsContainer = document.getElementById('modalActions');
+      actionsContainer.innerHTML = '';
+
+      // 地塊可購買選項
+      if (tile.cost > 0 && !owner) {
+        const buyBtn = document.createElement('button');
+        buyBtn.className = 'btn-cute text-xs px-4 py-2';
+        buyBtn.innerText = `🛒 投資/置產文化地塊 ($${tile.cost})`;
+        buyBtn.onclick = () => {
+          if (player.eco >= tile.cost) {
+            player.eco -= tile.cost;
+            player.properties.push(tile.id);
+            player.cult += Math.floor(tile.cost * 0.8);
+            credentialInflation += 2; // 大學/地塊置產增加文憑通膨
+            updateInflationUI();
+            
+            // 標示地塊持有者
+            const badge = document.getElementById(`tile-owner-${tile.id}`);
+            if (badge) {
+              badge.className = 'owner-badge';
+              badge.style.backgroundColor = player.color;
+              badge.style.color = '#ffffff';
+              badge.innerText = player.name.substring(0, 2);
+            }
+
+            playSound('buy');
+            logEvent(`🏠 ${player.name} 以 $${tile.cost} 購入【${tile.name}】，文化資本 +${Math.floor(tile.cost * 0.8)}`, 'gain');
+            closeModal('eventModal');
+            nextTurn();
+          } else {
+            alert('經濟資本不足，無法購入該地塊！');
+          }
+        };
+        actionsContainer.appendChild(buyBtn);
+      }
+
+      const passBtn = document.createElement('button');
+      passBtn.className = 'btn-cute-secondary text-xs px-4 py-2';
+      passBtn.innerText = '完成回合 / 下一位';
+      passBtn.onclick = () => {
+        closeModal('eventModal');
+        nextTurn();
+      };
+      actionsContainer.appendChild(passBtn);
+
+      modal.classList.add('active');
+    }
+
+    function inspectTile(idx) {
+      const tile = boardTiles[idx];
+      const owner = players.find(p => p.properties.includes(tile.id));
+      const currP = players[currentTurn];
+      openEventModal(currP, tile, owner);
+    }
+
+    function nextTurn() {
+      currentTurn = (currentTurn + 1) % players.length;
+      if (currentTurn === 0) {
+        // 階段推進
+        currentStageIndex = (currentStageIndex + 1) % stages.length;
+        document.getElementById('trackingStatusText').innerText = stages[currentStageIndex];
+        const stageBadge = document.getElementById('currentStageBadge');
+        if (stageBadge) stageBadge.innerText = stages[currentStageIndex];
+      }
+      updateDashboards();
+    }
+
+    function autoPlayTurn() {
+      rollDice();
+    }
+
+    function updateInflationUI() {
+      document.getElementById('inflationRateText').innerText = `+${credentialInflation}%`;
+    }
+
+    function logEvent(msg, type = 'info') {
+      const logBox = document.getElementById('logContent');
+      const entry = document.createElement('div');
+      entry.className = 'log-entry';
+
+      if (type === 'gain') entry.className += ' text-emerald-700 font-extrabold';
+      if (type === 'loss') entry.className += ' text-rose-700 font-extrabold';
+      if (type === 'system') entry.className += ' text-purple-800 font-black';
+
+      entry.innerHTML = `[${new Date().toLocaleTimeString().slice(0, 5)}] ${msg}`;
+      logBox.appendChild(entry);
+      logBox.scrollTop = logBox.scrollHeight;
+    }
+
+    // Modal 開關控制
+    function openHabitusModal() { document.getElementById('habitusModal').classList.add('active'); }
+    function closeHabitusModal() { document.getElementById('habitusModal').classList.remove('active'); }
+    function openLexiconModal() { document.getElementById('lexiconModal').classList.add('active'); }
+    function closeLexiconModal() { document.getElementById('lexiconModal').classList.remove('active'); }
+    function closeModal(id) { document.getElementById(id).classList.remove('active'); }
+
+    // Web Audio API 純正音樂與音效合成 (免外接檔案)
+    function initAudio() {
+      if (!audioCtx) {
+        audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+      }
+    }
+
+    function playSound(type) {
+      initAudio();
+      if (!audioCtx) return;
+
+      const osc = audioCtx.createOscillator();
+      const gain = audioCtx.createGain();
+      osc.connect(gain);
+      gain.connect(audioCtx.destination);
+
+      const now = audioCtx.currentTime;
+
+      if (type === 'roll') {
+        osc.type = 'triangle';
+        osc.frequency.setValueAtTime(300, now);
+        osc.frequency.exponentialRampToValueAtTime(800, now + 0.15);
+        gain.gain.setValueAtTime(0.3, now);
+        gain.gain.linearRampToValueAtTime(0.01, now + 0.15);
+        osc.start(now);
+        osc.stop(now + 0.15);
+      } else if (type === 'land') {
+        osc.type = 'sine';
+        osc.frequency.setValueAtTime(523.25, now); // C5
+        osc.frequency.setValueAtTime(659.25, now + 0.08); // E5
+        gain.gain.setValueAtTime(0.2, now);
+        gain.gain.linearRampToValueAtTime(0.01, now + 0.2);
+        osc.start(now);
+        osc.stop(now + 0.2);
+      } else if (type === 'buy') {
+        osc.type = 'sine';
+        osc.frequency.setValueAtTime(523.25, now);
+        osc.frequency.setValueAtTime(783.99, now + 0.1);
+        gain.gain.setValueAtTime(0.25, now);
+        gain.gain.linearRampToValueAtTime(0.01, now + 0.3);
+        osc.start(now);
+        osc.stop(now + 0.3);
+      } else if (type === 'convert') {
+        osc.type = 'sine';
+        osc.frequency.setValueAtTime(440, now);
+        osc.frequency.exponentialRampToValueAtTime(880, now + 0.25);
+        gain.gain.setValueAtTime(0.2, now);
+        gain.gain.linearRampToValueAtTime(0.01, now + 0.25);
+        osc.start(now);
+        osc.stop(now + 0.25);
+      }
+    }
+
+    let bgmInterval = null;
+    function toggleBGM() {
+      initAudio();
+      isBgmOn = !isBgmOn;
+      const btnText = document.getElementById('bgmText');
+      const btnIcon = document.getElementById('bgmIcon');
+
+      if (isBgmOn) {
+        btnText.innerText = '聲景音效: ON';
+        btnIcon.innerText = '🎶';
+        // 播放合成微柔背景音
+        bgmInterval = setInterval(() => {
+          if (!isBgmOn || !audioCtx) return;
+          const osc = audioCtx.createOscillator();
+          const gain = audioCtx.createGain();
+          osc.connect(gain);
+          gain.connect(audioCtx.destination);
+          
+          const notes = [261.63, 329.63, 392.00, 523.25];
+          const note = notes[Math.floor(Math.random() * notes.length)];
+          
+          osc.type = 'sine';
+          osc.frequency.setValueAtTime(note, audioCtx.currentTime);
+          gain.gain.setValueAtTime(0.03, audioCtx.currentTime);
+          gain.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime + 1.2);
+          
+          osc.start();
+          osc.stop(audioCtx.currentTime + 1.2);
+        }, 1500);
+      } else {
+        btnText.innerText = '聲景音效: OFF';
+        btnIcon.innerText = '🎵';
+        if (bgmInterval) clearInterval(bgmInterval);
+      }
+    }
+  </script>
+</body>
+</html>

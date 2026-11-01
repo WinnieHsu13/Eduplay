@@ -1,0 +1,819 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>大地主遊戲 vs 大富翁：經濟學雙模式模擬器</title>
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- FontAwesome Icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <!-- Chart.js for real-time economic telemetry -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <!-- Canvas Confetti -->
+    <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.6.0/dist/confetti.browser.min.js"></script>
+    <!-- Google Fonts -->
+    <link href="https://fonts.googleapis.com/css2?family=Noto+Serif+TC:wght@600;700;900&family=Plus+Jakarta+Sans:wght@400;600;700;800&display=swap" rel="stylesheet">
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    fontFamily: {
+                        sans: ['Plus Jakarta Sans', 'Noto Sans TC', 'sans-serif'],
+                        serif: ['Noto Serif TC', 'serif'],
+                    },
+                    colors: {
+                        vintage: {
+                            paper: '#FBF7EE',
+                            card: '#FFFDF9',
+                            border: '#D4C4A8',
+                            ink: '#2C221E',
+                            accent: '#8C2D19',
+                            green: '#2A5A3B',
+                            gold: '#C59B27',
+                            blue: '#1A4B6E'
+                        }
+                    }
+                }
+            }
+        }
+    </script>
+    <style>
+        body {
+            background-color: #2C221E;
+            background-image: radial-gradient(#3D302A 1px, transparent 1px);
+            background-size: 24px 24px;
+            color: #2C221E;
+        }
+        .board-grid {
+            display: grid;
+            grid-template-columns: repeat(7, minmax(0, 1fr));
+            grid-template-rows: repeat(7, minmax(0, 1fr));
+            aspect-ratio: 1 / 1;
+        }
+        .tile-corner { grid-span: 1; }
+        .custom-scrollbar::-webkit-scrollbar {
+            width: 6px;
+        }
+        .custom-scrollbar::-webkit-scrollbar-track {
+            background: rgba(0,0,0,0.05);
+            border-radius: 4px;
+        }
+        .custom-scrollbar::-webkit-scrollbar-thumb {
+            background: #C59B27;
+            border-radius: 4px;
+        }
+        .dice-shadow {
+            box-shadow: inset -4px -4px 8px rgba(0,0,0,0.2), 0 8px 16px rgba(0,0,0,0.3);
+        }
+        .glass-panel {
+            background: rgba(251, 247, 238, 0.95);
+            backdrop-filter: blur(10px);
+        }
+        @keyframes pulse-gold {
+            0%, 100% { box-shadow: 0 0 15px rgba(197, 155, 39, 0.4); }
+            50% { box-shadow: 0 0 25px rgba(197, 155, 39, 0.8); }
+        }
+        .gold-glow {
+            animation: pulse-gold 2s infinite;
+        }
+    </style>
+</head>
+<body class="min-h-screen p-2 sm:p-4 font-sans text-stone-800 flex flex-col justify-between">
+
+    <!-- Top Header & Game Control Bar -->
+    <header class="max-w-7xl mx-auto w-full mb-3 flex flex-col md:flex-row items-center justify-between bg-vintage-paper rounded-2xl p-4 shadow-xl border-2 border-vintage-border gap-4">
+        <div class="flex items-center gap-3">
+            <div class="w-12 h-12 rounded-xl bg-vintage-accent flex items-center justify-center text-white text-2xl font-serif shadow-md">
+                <i class="fa-solid fa-landmark"></i>
+            </div>
+            <div>
+                <h1 class="font-serif text-xl sm:text-2xl font-black text-vintage-ink tracking-tight">《大地主遊戲》vs《大富翁》</h1>
+                <p class="text-xs text-stone-600 font-semibold">1904 伊莉莎白·麥吉單一稅原版 vs 1935 派克兄弟資本壟斷版</p>
+            </div>
+        </div>
+
+        <!-- Mode Toggle & Telemetry Pill -->
+        <div class="flex flex-wrap items-center justify-center gap-3 w-full md:w-auto">
+            <div class="bg-stone-200/80 p-1.5 rounded-xl flex items-center gap-1 border border-stone-300">
+                <button id="mode-prosperity-btn" onclick="switchMode('prosperity')" class="px-3 py-1.5 rounded-lg text-xs font-bold transition-all duration-200 flex items-center gap-2 bg-emerald-700 text-white shadow">
+                    <i class="fa-solid fa-seedling"></i> 1904 繁榮模式 (單一稅)
+                </button>
+                <button id="mode-monopoly-btn" onclick="switchMode('monopoly')" class="px-3 py-1.5 rounded-lg text-xs font-bold transition-all duration-200 flex items-center gap-2 text-stone-600 hover:text-stone-900">
+                    <i class="fa-solid fa-crown"></i> 1935 壟斷模式 (商業版)
+                </button>
+            </div>
+            <button onclick="resetGame()" class="px-3 py-2 bg-stone-800 hover:bg-black text-white text-xs font-bold rounded-xl transition shadow flex items-center gap-1.5">
+                <i class="fa-solid fa-rotate-right"></i> 重新開始
+            </button>
+        </div>
+    </header>
+
+    <!-- Main Interactive Area -->
+    <main class="max-w-7xl mx-auto w-full grid grid-cols-1 lg:grid-cols-12 gap-4 items-start flex-grow">
+        
+        <!-- Left: Game Board Section (7 Columns) -->
+        <section class="lg:col-span-7 flex flex-col items-center justify-center">
+            <!-- Board Header Status Pill -->
+            <div id="mode-banner" class="w-full mb-2 p-2.5 rounded-xl bg-emerald-900 text-emerald-100 text-xs font-medium flex items-center justify-between border border-emerald-700/50 shadow-inner">
+                <span class="flex items-center gap-2 font-bold text-sm">
+                    <i id="mode-icon" class="fa-solid fa-scale-balanced text-yellow-400"></i>
+                    <span id="mode-title">1904 原版：繁榮模式 (Prosperity Rules)</span>
+                </span>
+                <span id="mode-desc" class="hidden sm:inline text-emerald-200 text-xs">地租繳入公共金庫，基尼係數低，共享發展成果</span>
+            </div>
+
+            <!-- The Board Grid -->
+            <div class="w-full max-w-[620px] bg-vintage-paper p-3 rounded-2xl shadow-2xl border-4 border-vintage-border relative">
+                <div id="board" class="board-grid gap-1 bg-stone-300 p-1 rounded-xl relative">
+                    <!-- Board Tiles injected dynamically by JS -->
+                </div>
+
+                <!-- Center Area inside Board -->
+                <div class="absolute inset-[15%] bg-vintage-card/95 backdrop-blur rounded-xl border-2 border-vintage-border flex flex-col justify-between p-4 shadow-inner">
+                    <!-- Center Header / Dynamic Stats -->
+                    <div class="flex items-center justify-between border-b border-stone-200 pb-2">
+                        <div>
+                            <span class="text-[10px] uppercase font-bold text-stone-400 tracking-wider">公共金庫 (Public Treasury)</span>
+                            <div class="text-xl sm:text-2xl font-black text-emerald-700 flex items-center gap-1">
+                                <i class="fa-solid fa-vault text-amber-500"></i>
+                                $<span id="treasury-val">0</span>
+                            </div>
+                        </div>
+                        <div class="text-right">
+                            <span class="text-[10px] uppercase font-bold text-stone-400 tracking-wider">不平等指數 (Gini)</span>
+                            <div class="text-base sm:text-lg font-black text-stone-700 flex items-center justify-end gap-1">
+                                <i class="fa-solid fa-chart-pie text-vintage-accent"></i>
+                                <span id="gini-val">0.00</span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Dice & Turn Actions -->
+                    <div class="my-auto text-center py-2">
+                        <div class="flex justify-center items-center gap-4 mb-3">
+                            <div id="dice-1" class="w-12 h-12 bg-white rounded-xl border-2 border-stone-300 flex items-center justify-center text-2xl font-black text-stone-800 dice-shadow transition-transform">1</div>
+                            <div id="dice-2" class="w-12 h-12 bg-white rounded-xl border-2 border-stone-300 flex items-center justify-center text-2xl font-black text-stone-800 dice-shadow transition-transform">1</div>
+                        </div>
+                        <button id="roll-btn" onclick="takeTurn()" class="w-full py-3 px-6 bg-vintage-accent hover:bg-red-800 text-white font-black text-sm tracking-wide uppercase rounded-xl shadow-lg hover:shadow-xl transition-all duration-200 transform active:scale-95 flex items-center justify-center gap-2 gold-glow">
+                            <i class="fa-solid fa-dice"></i> 投擲骰子 (Roll Dice)
+                        </button>
+                    </div>
+
+                    <!-- Current Turn Notification -->
+                    <div class="border-t border-stone-200 pt-2 flex items-center justify-between text-xs">
+                        <span class="text-stone-500 font-semibold">當前回合：</span>
+                        <span id="current-player-tag" class="font-bold text-vintage-ink flex items-center gap-1.5">
+                            <span class="w-2.5 h-2.5 rounded-full bg-blue-500 inline-block"></span> 玩家 1 (喬治主義者)
+                        </span>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Right: Telemetry, Player Cards & Theory Dashboard (5 Columns) -->
+        <section class="lg:col-span-5 flex flex-col gap-4">
+            
+            <!-- Player Status Roster -->
+            <div class="bg-vintage-paper p-4 rounded-2xl border-2 border-vintage-border shadow-lg">
+                <h3 class="font-serif font-bold text-stone-800 text-sm mb-3 flex items-center justify-between">
+                    <span><i class="fa-solid fa-users text-vintage-accent"></i> 玩家財務明細</span>
+                    <span id="round-counter" class="text-xs font-sans text-stone-500 font-normal">第 1 回合</span>
+                </h3>
+                <div id="players-roster" class="grid grid-cols-2 gap-2.5">
+                    <!-- Players injected by JS -->
+                </div>
+            </div>
+
+            <!-- Real-time Chart / Wealth Telemetry -->
+            <div class="bg-vintage-paper p-4 rounded-2xl border-2 border-vintage-border shadow-lg">
+                <div class="flex items-center justify-between mb-2">
+                    <h3 class="font-serif font-bold text-stone-800 text-sm"><i class="fa-solid fa-chart-line text-blue-600"></i> 貧富差距與財富走勢</h3>
+                    <span class="text-[10px] bg-stone-200 px-2 py-0.5 rounded text-stone-600 font-bold">即時監控</span>
+                </div>
+                <div class="h-32 w-full">
+                    <canvas id="wealthChart"></canvas>
+                </div>
+            </div>
+
+            <!-- Economic Theory Fact Box & Live Log -->
+            <div class="bg-vintage-paper p-4 rounded-2xl border-2 border-vintage-border shadow-lg flex-grow flex flex-col min-h-[220px]">
+                <!-- Tabs -->
+                <div class="flex border-b border-stone-300 mb-3 gap-2 text-xs font-bold">
+                    <button id="tab-log-btn" onclick="switchTab('log')" class="pb-2 border-b-2 border-vintage-accent text-vintage-accent">
+                        <i class="fa-solid fa-list-ul"></i> 事件日誌
+                    </button>
+                    <button id="tab-theory-btn" onclick="switchTab('theory')" class="pb-2 border-b-2 border-transparent text-stone-500 hover:text-stone-800">
+                        <i class="fa-solid fa-book-bookmark"></i> 經濟學理論與歷史
+                    </button>
+                </div>
+
+                <!-- Log Panel -->
+                <div id="panel-log" class="flex-grow overflow-y-auto custom-scrollbar max-h-48 pr-1 space-y-2 text-xs">
+                    <!-- Logs dynamically added -->
+                </div>
+
+                <!-- Theory Panel -->
+                <div id="panel-theory" class="hidden flex-grow overflow-y-auto custom-scrollbar max-h-48 pr-1 text-xs text-stone-700 leading-relaxed">
+                    <div id="theory-content" class="bg-amber-50/60 p-3 rounded-xl border border-amber-200/80">
+                        <h4 class="font-serif font-bold text-vintage-accent text-sm mb-1" id="theory-title">點擊棋盤地塊檢視歷史理論</h4>
+                        <p id="theory-text">原版《大地主遊戲》創作者伊莉莎白·麥吉（Elizabeth Magie）於 1904 年設計此遊戲，旨在使用「繁榮模式」推廣亨利·喬治（Henry George）的單一地價稅理論。當土地地租歸公時，全體玩家均可享有社會進步的福利。</p>
+                        <div class="mt-2 text-[11px] text-stone-500 font-semibold flex items-center gap-1" id="theory-citation">
+                            <i class="fa-solid fa-feather"></i> 參考著作：亨利·喬治《進步與貧困》(1879)
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+        </section>
+    </main>
+
+    <!-- Modal for Land Purchase / Event Action -->
+    <div id="action-modal" class="fixed inset-0 bg-black/60 backdrop-blur-sm z-50 flex items-center justify-center p-4 hidden">
+        <div class="bg-vintage-paper max-w-md w-full rounded-2xl border-4 border-vintage-border p-5 shadow-2xl animate-fade-in relative">
+            <div id="modal-color-bar" class="h-3 w-full bg-stone-400 rounded-full mb-3"></div>
+            <h3 id="modal-title" class="font-serif text-xl font-black text-vintage-ink mb-1">地塊名稱</h3>
+            <div id="modal-subtitle" class="text-xs font-bold text-vintage-accent mb-3">類別資訊</div>
+            
+            <p id="modal-desc" class="text-xs text-stone-700 leading-relaxed mb-4">地塊詳細說明與價格收費資訊...</p>
+
+            <div id="modal-theory-box" class="bg-amber-100/60 border border-amber-300 p-3 rounded-xl text-[11px] text-stone-800 mb-4">
+                <span class="font-bold text-amber-900 block mb-0.5"><i class="fa-solid fa-lightbulb"></i> 經濟學原理對照：</span>
+                <span id="modal-theory-text">理論解析...</span>
+            </div>
+
+            <div id="modal-actions" class="flex gap-2 justify-end">
+                <!-- Action Buttons injected by JS -->
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // --- GAME STATE ---
+        let gameMode = 'prosperity'; // 'prosperity' (1904) or 'monopoly' (1935)
+        let currentRound = 1;
+        let turnIndex = 0;
+        let publicTreasury = 0;
+        let wealthHistory = [];
+
+        // Player Models
+        let players = [
+            { id: 0, name: '喬治主義者', color: '#10B981', balance: 1500, position: 0, properties: [], avatar: 'fa-graduation-cap', isAi: false },
+            { id: 1, name: '資本家 A', color: '#3B82F6', balance: 1500, position: 0, properties: [], avatar: 'fa-user-tie', isAi: true },
+            { id: 2, name: '勞工 B', color: '#F59E0B', balance: 1500, position: 0, properties: [], avatar: 'fa-helmet-safety', isAi: true },
+            { id: 3, name: '投機商 C', color: '#EF4444', balance: 1500, position: 0, properties: [], avatar: 'fa-chart-line-up', isAi: true }
+        ];
+
+        // Board Tiles Definition (24 Tiles around a 7x7 Grid)
+        // Order: Bottom Row (0 to 6, Right to Left), Left Col (7 to 11, Bottom to Top), Top Row (12 to 18, Left to Right), Right Col (19 to 23, Top to Bottom)
+        const boardTiles = [
+            { id: 0, name: '大地母親 (起點)', type: 'start', cost: 0, rent: 0, color: '#10B981', icon: 'fa-earth-americas', theory: '標語「在土地上施加勞動產生工資」。在繁榮模式下每次經過發放 $200 基礎工資。' },
+            { id: 1, name: '食物 (必備品)', type: 'necessity', cost: 100, rent: 30, color: '#F97316', icon: 'fa-utensils', theory: '無彈性需求的生存必需品。壟斷模式下收取私有高價；繁榮模式下公有免稅低價。' },
+            { id: 2, name: '藍貝爾特區', type: 'property', cost: 120, rent: 40, color: '#3B82F6', icon: 'fa-building', theory: '土地買賣確立產權。繁榮模式地租歸公共金庫；壟斷模式歸個人。' },
+            { id: 3, name: '公共金庫', type: 'treasury', cost: 0, rent: 0, color: '#EAB308', icon: 'fa-vault', theory: '亨利·喬治單一稅核心：地租歸公後，用於資助公共事業與全體分紅。' },
+            { id: 4, name: '燃料 (必備品)', type: 'necessity', cost: 100, rent: 30, color: '#F97316', icon: 'fa-fire-flame-curved', theory: '工業與生存必需能源。私有化導致公司鎮（Company Towns）壓榨現象。' },
+            { id: 5, name: '鐵路公司', type: 'railroad', cost: 200, rent: 50, color: '#64748B', icon: 'fa-train', theory: '自然壟斷事業。金庫資金充裕時（繁榮模式）轉為免費公營公共設施。' },
+            { id: 6, name: '平民電車', type: 'trolley', cost: 0, rent: 20, color: '#8B5CF6', icon: 'fa-bus', theory: '大眾運輸設施。奢侈消費懲罰後的平民替代工具。' },
+            
+            { id: 7, name: '住房 (必備品)', type: 'necessity', cost: 150, rent: 45, color: '#F97316', icon: 'fa-house', theory: '居住權剛性需求。壟斷引發高房租與住房危機，單一稅可抑制炒房。' },
+            { id: 8, name: '金盞花花園', type: 'property', cost: 160, rent: 50, color: '#10B981', icon: 'fa-tree', theory: '土地增值（Unearned Increment）源於周邊公共建設，而非地主勞動。' },
+            { id: 9, name: '所得稅地塊', type: 'tax', cost: 0, rent: 100, color: '#EF4444', icon: 'fa-receipt', theory: '若不對資本與土地課稅，僅課徵所得稅無法遏止資本累積不平等。' },
+            { id: 10, name: '救濟院 (Poor House)', type: 'poorhouse', cost: 0, rent: 0, color: '#6B7280', icon: 'fa-hand-holding-hand', theory: '原版獨有：缺乏社會安全網時破產者收容所。繁榮模式下完全不會啟動。' },
+            { id: 11, name: '衣物 (必備品)', type: 'necessity', cost: 100, rent: 30, color: '#F97316', icon: 'fa-shirt', theory: '基本生存穿著。去商品化（De-commodification）確保基本人權底線。' },
+
+            { id: 12, name: '電力公司', type: 'utility', cost: 150, rent: 40, color: '#0EA5E9', icon: 'fa-bolt', theory: '網絡效應與巨額沉沒成本形成的公用事業自然壟斷。' },
+            { id: 13, name: '玫瑰莊園', type: 'property', cost: 200, rent: 70, color: '#EC4899', icon: 'fa-synagogue', theory: '高級住宅區。地租隨社會發展指數級飆升。' },
+            { id: 14, name: '麥迪遜廣場', type: 'luxury', cost: 0, rent: 75, color: '#A855F7', icon: 'fa-champagne-glasses', theory: '韋伯倫「炫耀性消費」。若現金不足 $75 將倒退至平民電車地塊。' },
+            { id: 15, name: '非法侵入 (監獄)', type: 'jail', cost: 0, rent: 0, color: '#374151', icon: 'fa-gavel', theory: '原版藍血爵士領地：揭示私有化初期的土地圈佔（Enclosure Acts）本質。' },
+            { id: 16, name: '自來水廠', type: 'utility', cost: 150, rent: 40, color: '#0EA5E9', icon: 'fa-droplet', theory: '民生命脈事業私有化後形成的高額抽租效應。' },
+            { id: 17, name: '橡樹大道', type: 'property', cost: 240, rent: 85, color: '#F59E0B', icon: 'fa-city', theory: '城市核心地塊，地主憑藉地租抽取大部分社會剩餘價值。' },
+
+            { id: 18, name: '奢侈稅', type: 'tax', cost: 0, rent: 150, color: '#EF4444', icon: 'fa-coins', theory: '針對非必需奢侈消費的財富再分配調節機制。' },
+            { id: 19, name: '公共金庫', type: 'treasury', cost: 0, rent: 0, color: '#EAB308', icon: 'fa-vault', theory: '當公共金庫盈餘充沛，自動發放全民基本收入（UBI）與全民分紅。' },
+            { id: 20, name: '帝國大道', type: 'property', cost: 300, rent: 110, color: '#8B5CF6', icon: 'fa-hotel', theory: '頂級商業地塊。壟斷模式下建房/飯店地租呈指數型飆升。' },
+            { id: 21, name: '命運與機會', type: 'chance', cost: 0, rent: 0, color: '#D97706', icon: 'fa-dice-d6', theory: '外生經濟衝擊（如金融危機、重大疾病）。缺乏安全網時易致破產。' },
+            { id: 22, name: '皇家公園', type: 'property', cost: 350, rent: 130, color: '#8B5CF6', icon: 'fa-crown', theory: '棋盤最高價土地。代表極致的資產集聚與地租索取權。' },
+            { id: 23, name: '逮捕入獄', type: 'gojail', cost: 0, rent: 0, color: '#1F2937', icon: 'fa-handcuffs', theory: '後期壟斷模式下，玩家反而傾向「留在獄中」避難免付地租。' }
+        ];
+
+        // Chart Instance
+        let wealthChart;
+
+        window.onload = function() {
+            renderBoardGrid();
+            initChart();
+            updateUI();
+            addLog("🎮 遊戲開始！當前模式：1904 原版《大地主遊戲》繁榮模式（單一地價稅）。", "system");
+        };
+
+        // Render Board Grid visually mapping 24 tiles onto a 7x7 outer perimeter
+        function renderBoardGrid() {
+            const boardEl = document.getElementById('board');
+            boardEl.innerHTML = '';
+
+            // Mapping 7x7 grid coordinates (0 to 6 row/col)
+            const gridCoords = [
+                // Bottom Row (Right to Left: (6,6) to (6,0)) -> Tiles 0..6
+                [6,6], [6,5], [6,4], [6,3], [6,2], [6,1], [6,0],
+                // Left Column (Upwards: (5,0) to (1,0)) -> Tiles 7..11
+                [5,0], [4,0], [3,0], [2,0], [1,0],
+                // Top Row (Left to Right: (0,0) to (0,6)) -> Tiles 12..18
+                [0,0], [0,1], [0,2], [0,3], [0,4], [0,5], [0,6],
+                // Right Column (Downwards: (1,6) to (5,6)) -> Tiles 19..23
+                [1,6], [2,6], [3,6], [4,6], [5,6]
+            ];
+
+            gridCoords.forEach((coord, idx) => {
+                const tile = boardTiles[idx];
+                const tileDiv = document.createElement('div');
+                tileDiv.id = `tile-${idx}`;
+                tileDiv.style.gridRow = coord[0] + 1;
+                tileDiv.style.gridColumn = coord[1] + 1;
+                tileDiv.onclick = () => showTileTheory(idx);
+
+                tileDiv.className = `relative bg-vintage-card border border-stone-300 rounded-lg p-1 flex flex-col justify-between items-center text-center cursor-pointer hover:border-vintage-gold transition-all duration-150 select-none shadow-sm overflow-hidden`;
+
+                // Owner/Color Header
+                let colorBar = `<div class="w-full h-1.5 rounded-t" style="background-color: ${tile.color}"></div>`;
+
+                tileDiv.innerHTML = `
+                    ${colorBar}
+                    <div class="my-auto flex flex-col items-center">
+                        <i class="fa-solid ${tile.icon} text-stone-700 text-xs sm:text-sm mb-0.5"></i>
+                        <span class="text-[9px] sm:text-[10px] font-bold text-stone-800 line-clamp-1 leading-tight">${tile.name}</span>
+                        ${tile.cost > 0 ? `<span class="text-[8px] font-semibold text-stone-500">$${tile.cost}</span>` : ''}
+                    </div>
+                    <!-- Owner / Tokens Container -->
+                    <div id="tile-tokens-${idx}" class="flex flex-wrap gap-0.5 justify-center items-center min-h-[12px] w-full"></div>
+                `;
+
+                boardEl.appendChild(tileDiv);
+            });
+
+            updatePlayerTokensOnBoard();
+        }
+
+        // Draw Player Token Icons on Tiles
+        function updatePlayerTokensOnBoard() {
+            // Clear tokens
+            for (let i = 0; i < boardTiles.length; i++) {
+                const container = document.getElementById(`tile-tokens-${i}`);
+                if (container) container.innerHTML = '';
+            }
+
+            // Render active players
+            players.forEach(p => {
+                if (p.balance >= 0) {
+                    const container = document.getElementById(`tile-tokens-${p.position}`);
+                    if (container) {
+                        const token = document.createElement('div');
+                        token.className = `w-3.5 h-3.5 rounded-full flex items-center justify-center text-[8px] text-white font-bold shadow-md transform hover:scale-125 transition-transform`;
+                        token.style.backgroundColor = p.color;
+                        token.title = `${p.name} ($${p.balance})`;
+                        token.innerHTML = `<i class="fa-solid ${p.avatar}"></i>`;
+                        container.appendChild(token);
+                    }
+                }
+            });
+        }
+
+        function takeTurn() {
+            const activePlayer = players[turnIndex];
+
+            if (activePlayer.balance < 0) {
+                nextTurn();
+                return;
+            }
+
+            // Roll Dice (1-6 each)
+            const d1 = Math.floor(Math.random() * 6) + 1;
+            const d2 = Math.floor(Math.random() * 6) + 1;
+            const steps = d1 + d2;
+
+            // Animate Dice
+            document.getElementById('dice-1').innerText = d1;
+            document.getElementById('dice-2').innerText = d2;
+
+            // Move Player
+            const oldPos = activePlayer.position;
+            activePlayer.position = (activePlayer.position + steps) % boardTiles.length;
+
+            // Check if passed Start (Mother Earth)
+            if (activePlayer.position < oldPos) {
+                activePlayer.balance += 200;
+                addLog(`🌍 ${activePlayer.name} 經過「大地母親」，依據勞動價值獲得工資 +$200。`, 'gain');
+            }
+
+            updatePlayerTokensOnBoard();
+            
+            // Land on tile trigger
+            handleTileLanding(activePlayer, boardTiles[activePlayer.position]);
+
+            // Track wealth telemetry
+            recordTelemetry();
+            updateUI();
+        }
+
+        function handleTileLanding(player, tile) {
+            addLog(`🎲 ${player.name} 停留在「${tile.name}」。`, 'neutral');
+
+            // 1. PROPERTY LANDS
+            if (tile.type === 'property' || tile.type === 'necessity' || tile.type === 'utility' || tile.type === 'railroad') {
+                const owner = players.find(p => p.properties.includes(tile.id));
+
+                if (!owner) {
+                    // Unowned: Offer purchase or auto-purchase for AI
+                    if (player.isAi) {
+                        if (player.balance >= tile.cost + 200) {
+                            buyProperty(player, tile);
+                        } else {
+                            addLog(`💰 ${player.name} 選擇不購買 ${tile.name}。`, 'neutral');
+                        }
+                    } else {
+                        showActionModal(
+                            `購買地塊：${tile.name}`,
+                            `價格：$${tile.cost} | 基礎地租：$${tile.rent}`,
+                            `此土地目前未被持有。您可以選擇購入該資產。`,
+                            tile.theory,
+                            tile.color,
+                            [
+                                { label: `購買 ($${tile.cost})`, action: () => { buyProperty(player, tile); closeModal(); }, class: 'bg-emerald-700 text-white' },
+                                { label: '放棄', action: () => closeModal(), class: 'bg-stone-300 text-stone-800' }
+                            ]
+                        );
+                    }
+                } else if (owner.id !== player.id) {
+                    // Pay Rent according to MODE
+                    let rentAmount = tile.rent;
+
+                    if (gameMode === 'prosperity') {
+                        // PROSPERITY MODE (1904 Single Tax Rules)
+                        if (tile.type === 'necessity') {
+                            // Necessities are subsidized/free under single tax
+                            rentAmount = 10;
+                            player.balance -= rentAmount;
+                            publicTreasury += rentAmount;
+                            addLog(`🥦 繁榮模式：${player.name} 於必需品【${tile.name}】支付免稅低價 $${rentAmount} 繳入公共金庫。`, 'tax');
+                        } else if (tile.type === 'railroad' || tile.type === 'utility') {
+                            // Utilities public if Treasury > $500
+                            if (publicTreasury >= 500) {
+                                rentAmount = 0;
+                                addLog(`🚆 繁榮模式：公共金庫累積充足，【${tile.name}】轉為免費公共設施！`, 'gain');
+                            } else {
+                                player.balance -= rentAmount;
+                                publicTreasury += rentAmount;
+                                addLog(`⚡ 繁榮模式：${player.name} 支付公用事業費 $${rentAmount} 至公共金庫。`, 'tax');
+                            }
+                        } else {
+                            // Land Value Tax (LVT): Rent goes to Public Treasury
+                            player.balance -= rentAmount;
+                            publicTreasury += rentAmount;
+                            addLog(`🏛️ 繁榮模式：${player.name} 於【${tile.name}】支付地租 $${rentAmount}，全數繳入【公共金庫】！`, 'tax');
+                        }
+                    } else {
+                        // MONOPOLY MODE (1935 Commercial Rules)
+                        // Private Extraction: Rent goes to Owner directly
+                        player.balance -= rentAmount;
+                        owner.balance += rentAmount;
+                        addLog(`💸 壟斷模式：${player.name} 向地主 ${owner.name} 強制支付 private 地租 $${rentAmount}！`, 'loss');
+                    }
+                }
+            }
+            // 2. PUBLIC TREASURY / CHANCE
+            else if (tile.type === 'treasury') {
+                if (gameMode === 'prosperity') {
+                    // Dividend check
+                    if (publicTreasury >= 400) {
+                        const dividend = Math.floor(publicTreasury / players.filter(p=>p.balance>=0).length);
+                        players.forEach(p => { if(p.balance >= 0) p.balance += dividend; });
+                        addLog(`✨ 繁榮模式：公共金庫盈餘溢出！發放全體公民分紅每人 +$${dividend}！`, 'gain');
+                        publicTreasury = 0;
+                    } else {
+                        addLog(`🏛️ 停留在公共金庫。資金為 $${publicTreasury}（達到 $400 將觸發全民分紅）。`, 'neutral');
+                    }
+                } else {
+                    // Commercial Monopoly Chance
+                    const penalty = 50;
+                    player.balance -= penalty;
+                    addLog(`❓ 壟斷模式機會卡：支付手續費與稅款 -$${penalty}。`, 'loss');
+                }
+            }
+            // 3. TAX SPACES
+            else if (tile.type === 'tax') {
+                const tax = 100;
+                player.balance -= tax;
+                if (gameMode === 'prosperity') {
+                    publicTreasury += tax;
+                    addLog(`🧾 ${player.name} 繳納所得稅 $${tax} 至公共金庫。`, 'tax');
+                } else {
+                    addLog(`🧾 ${player.name} 繳納所得稅 $${tax} 給銀行。`, 'loss');
+                }
+            }
+            // 4. LUXURY / MADISON SQUARE
+            else if (tile.type === 'luxury') {
+                if (player.balance < 75) {
+                    player.position = 6; // Trolley tile
+                    addLog(`🍷 ${player.name} 因現金不足 $75，從麥迪遜廣場倒退至「平民電車」！`, 'loss');
+                    updatePlayerTokensOnBoard();
+                } else {
+                    player.balance -= 75;
+                    addLog(`🍷 ${player.name} 於麥迪遜廣場進行高端炫耀性消費 -$75。`, 'loss');
+                }
+            }
+            // 5. POOR HOUSE / JAIL
+            else if (tile.type === 'poorhouse' || tile.type === 'jail' || tile.type === 'gojail') {
+                if (gameMode === 'monopoly') {
+                    player.balance -= 50;
+                    addLog(`⚖️ 壟斷模式：${player.name} 進入監獄/救濟院，支付保釋金/生存手續費 -$50。`, 'loss');
+                } else {
+                    addLog(`🕊️ 繁榮模式：社會安全網完善，救濟院未被啟用，全員自由通行。`, 'gain');
+                }
+            }
+
+            // Check Bankruptcy
+            checkBankruptcy(player);
+            
+            // Advance turn after slight delay if no interactive modal opened
+            if (player.isAi) {
+                setTimeout(nextTurn, 800);
+            }
+        }
+
+        function buyProperty(player, tile) {
+            if (player.balance >= tile.cost) {
+                player.balance -= tile.cost;
+                player.properties.push(tile.id);
+                
+                // Colorize board tile owner indicator
+                const tileEl = document.getElementById(`tile-${tile.id}`);
+                if (tileEl) {
+                    tileEl.style.borderColor = player.color;
+                    tileEl.style.borderWidth = '2px';
+                }
+
+                addLog(`🏠 ${player.name} 以 $${tile.cost} 購入了【${tile.name}】！`, 'gain');
+            } else {
+                addLog(`⚠️ ${player.name} 資金不足，無法購買【${tile.name}】。`, 'neutral');
+            }
+        }
+
+        function checkBankruptcy(player) {
+            if (player.balance < 0) {
+                addLog(`🚨 ${player.name} 資金耗盡破產！${gameMode === 'monopoly' ? '退出遊戲。' : '進入救濟院。'}`, 'loss');
+            }
+        }
+
+        function nextTurn() {
+            turnIndex = (turnIndex + 1) % players.length;
+            if (turnIndex === 0) currentRound++;
+
+            updateUI();
+
+            // Auto trigger next AI turn if AI
+            if (players[turnIndex].isAi && players[turnIndex].balance >= 0) {
+                setTimeout(takeTurn, 600);
+            }
+        }
+
+        function calculateGini() {
+            const activeBalances = players.map(p => Math.max(0, p.balance)).sort((a,b) => a - b);
+            const n = activeBalances.length;
+            if (n === 0) return 0;
+            
+            const sum = activeBalances.reduce((a, b) => a + b, 0);
+            if (sum === 0) return 0;
+
+            let cumulative = 0;
+            for (let i = 0; i < n; i++) {
+                cumulative += (i + 1) * activeBalances[i];
+            }
+
+            const gini = ((2 * cumulative) / (n * sum)) - ((n + 1) / n);
+            return Math.max(0, Math.min(1, gini)).toFixed(2);
+        }
+
+        // Update Chart Telemetry
+        function initChart() {
+            const ctx = document.getElementById('wealthChart').getContext('2d');
+            wealthChart = new Chart(ctx, {
+                type: 'line',
+                data: {
+                    labels: ['1'],
+                    datasets: players.map(p => ({
+                        label: p.name,
+                        data: [p.balance],
+                        borderColor: p.color,
+                        borderWidth: 2,
+                        tension: 0.3,
+                        pointRadius: 1
+                    }))
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: { legend: { display: false } },
+                    scales: {
+                        x: { display: false },
+                        y: { ticks: { font: { size: 9 } } }
+                    }
+                }
+            });
+        }
+
+        function recordTelemetry() {
+            if (!wealthChart) return;
+            
+            wealthChart.data.labels.push(currentRound.toString());
+            players.forEach((p, idx) => {
+                wealthChart.data.datasets[idx].data.push(p.balance);
+            });
+
+            if (wealthChart.data.labels.length > 20) {
+                wealthChart.data.labels.shift();
+                wealthChart.data.datasets.forEach(d => d.data.shift());
+            }
+
+            wealthChart.update();
+        }
+
+        function switchMode(newMode) {
+            gameMode = newMode;
+            
+            const pBtn = document.getElementById('mode-prosperity-btn');
+            const mBtn = document.getElementById('mode-monopoly-btn');
+            const banner = document.getElementById('mode-banner');
+            const modeTitle = document.getElementById('mode-title');
+            const modeDesc = document.getElementById('mode-desc');
+            const modeIcon = document.getElementById('mode-icon');
+
+            if (newMode === 'prosperity') {
+                pBtn.className = 'px-3 py-1.5 rounded-lg text-xs font-bold transition-all duration-200 flex items-center gap-2 bg-emerald-700 text-white shadow';
+                mBtn.className = 'px-3 py-1.5 rounded-lg text-xs font-bold transition-all duration-200 flex items-center gap-2 text-stone-600 hover:text-stone-900';
+                
+                banner.className = 'w-full mb-2 p-2.5 rounded-xl bg-emerald-900 text-emerald-100 text-xs font-medium flex items-center justify-between border border-emerald-700/50 shadow-inner';
+                modeTitle.innerText = '1904 原版：繁榮模式 (Prosperity Rules)';
+                modeDesc.innerText = '地租繳入公共金庫，基尼係數低，共享發展成果';
+                modeIcon.className = 'fa-solid fa-scale-balanced text-yellow-400';
+
+                addLog('🔄 切換至【1904 繁榮模式】：單一地價稅啟動，地租收入將轉入公共金庫福利共享。', 'system');
+            } else {
+                mBtn.className = 'px-3 py-1.5 rounded-lg text-xs font-bold transition-all duration-200 flex items-center gap-2 bg-red-800 text-white shadow';
+                pBtn.className = 'px-3 py-1.5 rounded-lg text-xs font-bold transition-all duration-200 flex items-center gap-2 text-stone-600 hover:text-stone-900';
+                
+                banner.className = 'w-full mb-2 p-2.5 rounded-xl bg-red-950 text-red-100 text-xs font-medium flex items-center justify-between border border-red-800/50 shadow-inner';
+                modeTitle.innerText = '1935 商業版：壟斷模式 (Monopolist Rules)';
+                modeDesc.innerText = '私人地租抽取、建房倍增、資本弱肉強食直到對手破產';
+                modeIcon.className = 'fa-solid fa-crown text-amber-400';
+
+                addLog('🔄 切換至【1935 壟斷模式】：刪除公共金庫，地租私有化抽取，貧富差距將加速擴大！', 'system');
+            }
+
+            updateUI();
+        }
+
+        function updateUI() {
+            // Update Treasury & Gini
+            document.getElementById('treasury-val').innerText = publicTreasury;
+            document.getElementById('gini-val').innerText = calculateGini();
+            document.getElementById('round-counter').innerText = `第 ${currentRound} 回合`;
+
+            // Active Player Tag
+            const currP = players[turnIndex];
+            const pTag = document.getElementById('current-player-tag');
+            pTag.innerHTML = `
+                <span class="w-2.5 h-2.5 rounded-full inline-block" style="background-color: ${currP.color}"></span>
+                ${currP.name} ${currP.isAi ? '(AI)' : ''}
+            `;
+
+            // Roll Button State
+            const rollBtn = document.getElementById('roll-btn');
+            if (currP.isAi) {
+                rollBtn.disabled = true;
+                rollBtn.classList.add('opacity-50', 'cursor-not-allowed');
+                rollBtn.innerText = 'AI 思考中...';
+            } else {
+                rollBtn.disabled = false;
+                rollBtn.classList.remove('opacity-50', 'cursor-not-allowed');
+                rollBtn.innerHTML = `<i class="fa-solid fa-dice"></i> 投擲骰子 (Roll Dice)`;
+            }
+
+            // Player Roster Cards
+            const rosterEl = document.getElementById('players-roster');
+            rosterEl.innerHTML = '';
+
+            players.forEach((p) => {
+                const card = document.createElement('div');
+                const isCurrent = p.id === currP.id;
+                card.className = `p-2.5 rounded-xl border transition-all ${isCurrent ? 'bg-amber-50 border-vintage-gold shadow-md' : 'bg-white border-stone-200'} ${p.balance < 0 ? 'opacity-40 grayscale' : ''}`;
+                
+                card.innerHTML = `
+                    <div class="flex items-center justify-between mb-1">
+                        <span class="text-xs font-bold flex items-center gap-1.5" style="color: ${p.color}">
+                            <i class="fa-solid ${p.avatar}"></i> ${p.name}
+                        </span>
+                        <span class="text-[10px] bg-stone-100 text-stone-600 px-1.5 py-0.5 rounded font-mono font-bold">${p.properties.length} 地產</span>
+                    </div>
+                    <div class="text-sm font-black text-stone-800">
+                        $${p.balance}
+                    </div>
+                `;
+                rosterEl.appendChild(card);
+            });
+
+            updatePlayerTokensOnBoard();
+        }
+
+        function addLog(msg, type) {
+            const panel = document.getElementById('panel-log');
+            const item = document.createElement('div');
+            
+            let colorClass = 'text-stone-700 bg-stone-100/70 border-stone-200';
+            if (type === 'gain') colorClass = 'text-emerald-800 bg-emerald-50 border-emerald-200';
+            if (type === 'loss') colorClass = 'text-red-800 bg-red-50 border-red-200';
+            if (type === 'tax') colorClass = 'text-amber-800 bg-amber-50 border-amber-200';
+            if (type === 'system') colorClass = 'text-blue-800 bg-blue-50 border-blue-200 font-bold';
+
+            item.className = `p-2 rounded-lg border text-[11px] leading-snug ${colorClass}`;
+            item.innerHTML = msg;
+
+            panel.appendChild(item);
+            panel.scrollTop = panel.scrollHeight;
+        }
+
+        function switchTab(tab) {
+            const logBtn = document.getElementById('tab-log-btn');
+            const theoryBtn = document.getElementById('tab-theory-btn');
+            const logPanel = document.getElementById('panel-log');
+            const theoryPanel = document.getElementById('panel-theory');
+
+            if (tab === 'log') {
+                logBtn.className = 'pb-2 border-b-2 border-vintage-accent text-vintage-accent';
+                theoryBtn.className = 'pb-2 border-b-2 border-transparent text-stone-500 hover:text-stone-800';
+                logPanel.classList.remove('hidden');
+                theoryPanel.classList.add('hidden');
+            } else {
+                theoryBtn.className = 'pb-2 border-b-2 border-vintage-accent text-vintage-accent';
+                logBtn.className = 'pb-2 border-b-2 border-transparent text-stone-500 hover:text-stone-800';
+                theoryPanel.classList.remove('hidden');
+                logPanel.classList.add('hidden');
+            }
+        }
+
+        function showTileTheory(idx) {
+            const tile = boardTiles[idx];
+            switchTab('theory');
+            document.getElementById('theory-title').innerText = `${tile.name} (歷史與理論解析)`;
+            document.getElementById('theory-text').innerText = tile.theory;
+            document.getElementById('theory-citation').innerHTML = `<i class="fa-solid fa-book"></i> 地塊類型：${tile.type.toUpperCase()} | 定價: $${tile.cost}`;
+        }
+
+        function showActionModal(title, subtitle, desc, theory, color, actions) {
+            document.getElementById('modal-title').innerText = title;
+            document.getElementById('modal-subtitle').innerText = subtitle;
+            document.getElementById('modal-desc').innerText = desc;
+            document.getElementById('modal-theory-text').innerText = theory;
+            document.getElementById('modal-color-bar').style.backgroundColor = color || '#C59B27';
+
+            const actionsContainer = document.getElementById('modal-actions');
+            actionsContainer.innerHTML = '';
+
+            actions.forEach(act => {
+                const btn = document.createElement('button');
+                btn.className = `px-4 py-2 rounded-xl text-xs font-bold transition ${act.class}`;
+                btn.innerText = act.label;
+                btn.onclick = act.action;
+                actionsContainer.appendChild(btn);
+            });
+
+            document.getElementById('action-modal').classList.remove('hidden');
+        }
+
+        function closeModal() {
+            document.getElementById('action-modal').classList.add('hidden');
+        }
+
+        function resetGame() {
+            currentRound = 1;
+            turnIndex = 0;
+            publicTreasury = 0;
+            players = [
+                { id: 0, name: '喬治主義者', color: '#10B981', balance: 1500, position: 0, properties: [], avatar: 'fa-graduation-cap', isAi: false },
+                { id: 1, name: '資本家 A', color: '#3B82F6', balance: 1500, position: 0, properties: [], avatar: 'fa-user-tie', isAi: true },
+                { id: 2, name: '勞工 B', color: '#F59E0B', balance: 1500, position: 0, properties: [], avatar: 'fa-helmet-safety', isAi: true },
+                { id: 3, name: '投機商 C', color: '#EF4444', balance: 1500, position: 0, properties: [], avatar: 'fa-chart-line-up', isAi: true }
+            ];
+            
+            document.getElementById('panel-log').innerHTML = '';
+            addLog("🔄 遊戲已重新重置。", "system");
+            
+            if (wealthChart) {
+                wealthChart.data.labels = ['1'];
+                wealthChart.data.datasets.forEach((d, i) => { d.data = [1500]; });
+                wealthChart.update();
+            }
+
+            updateUI();
+        }
+    </script>
+</body>
+</html>
